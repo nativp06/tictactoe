@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ETF Advisor — Wall Street Intelligence</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0a0e1a;--bg2:#111827;--bg3:#1a2235;--bg4:#1e2d45;
+      --accent:#3b82f6;--accent2:#60a5fa;--green:#10b981;--red:#ef4444;
+      --yellow:#f59e0b;--purple:#8b5cf6;--text:#e2e8f0;--muted:#94a3b8;
+      --border:#1e3a5f;
+    }
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    a{color:var(--accent2)}
+
+    /* ── HEADER ── */
+    header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+    .logo{display:flex;align-items:center;gap:10px;font-size:1.2rem;font-weight:700;color:var(--accent2)}
+    .logo span{background:linear-gradient(135deg,var(--accent),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .header-right{display:flex;align-items:center;gap:16px}
+    .date-badge{font-size:.8rem;color:var(--muted);background:var(--bg3);padding:4px 12px;border-radius:20px;border:1px solid var(--border)}
+    .btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .2s}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-primary:hover{background:#2563eb}
+    .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+    .btn-ghost:hover{background:var(--bg3);color:var(--text)}
+    .btn-sm{padding:5px 10px;font-size:.78rem}
+
+    /* ── MODAL ── */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center}
+    .modal-overlay.open{display:flex}
+    .modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;width:480px;max-width:95vw}
+    .modal h2{margin-bottom:16px;font-size:1.1rem}
+    .input-group{margin-bottom:16px}
+    .input-group label{display:block;font-size:.82rem;color:var(--muted);margin-bottom:6px}
+    .input-group input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:.9rem;outline:none}
+    .input-group input:focus{border-color:var(--accent)}
+    .modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+    .hint{font-size:.75rem;color:var(--muted);margin-top:6px}
+
+    /* ── LAYOUT ── */
+    main{padding:24px;max-width:1600px;margin:0 auto}
+    section{margin-bottom:32px}
+    h2.section-title{font-size:1rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+    /* ── MARKET OVERVIEW ── */
+    .market-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+    .market-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative;overflow:hidden}
+    .market-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+    .market-card.up::before{background:var(--green)}
+    .market-card.down::before{background:var(--red)}
+    .market-card .sym{font-size:.75rem;color:var(--muted);font-weight:600;letter-spacing:1px}
+    .market-card .price{font-size:1.4rem;font-weight:700;margin:4px 0}
+    .market-card .change{font-size:.85rem;font-weight:600}
+    .market-card .change.up{color:var(--green)}
+    .market-card .change.down{color:var(--red)}
+    .market-card .month{font-size:.75rem;color:var(--muted);margin-top:4px}
+    .spark-wrap{height:40px;margin-top:8px}
+
+    /* ── ETF GRID ── */
+    .etf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+    .etf-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:18px;cursor:pointer;transition:all .2s;position:relative}
+    .etf-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 24px rgba(59,130,246,.15)}
+    .etf-card .card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+    .etf-card .sym{font-size:1rem;font-weight:700}
+    .etf-card .name{font-size:.75rem;color:var(--muted)}
+    .etf-card .sector-badge{font-size:.65rem;padding:2px 8px;border-radius:10px;background:var(--bg4);color:var(--muted);border:1px solid var(--border)}
+    .etf-card .price-row{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
+    .etf-card .price{font-size:1.3rem;font-weight:700}
+    .etf-card .chg{font-size:.85rem;font-weight:600}
+    .etf-card .chg.up{color:var(--green)}
+    .etf-card .chg.down{color:var(--red)}
+    .etf-card .metrics{display:flex;gap:16px;margin-bottom:12px}
+    .etf-card .metric{font-size:.75rem;color:var(--muted)}
+    .etf-card .metric span{color:var(--text);font-weight:600}
+    .chart-wrap{height:80px;position:relative}
+    .rec-badge{position:absolute;top:12px;right:12px;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:8px;letter-spacing:.5px}
+    .rec-badge.buy{background:rgba(16,185,129,.2);color:var(--green);border:1px solid rgba(16,185,129,.3)}
+    .rec-badge.hold{background:rgba(245,158,11,.2);color:var(--yellow);border:1px solid rgba(245,158,11,.3)}
+    .rec-badge.sell{background:rgba(239,68,68,.2);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+
+    /* ── AI SECTION ── */
+    .ai-panel{background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+    .investor-tabs{display:flex;overflow-x:auto;border-bottom:1px solid var(--border);scrollbar-width:none}
+    .investor-tabs::-webkit-scrollbar{display:none}
+    .itab{padding:14px 20px;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:.85rem;font-weight:600;white-space:nowrap;display:flex;align-items:center;gap:8px;border-bottom:2px solid transparent;transition:all .2s}
+    .itab:hover{color:var(--text);background:var(--bg3)}
+    .itab.active{color:var(--accent2);border-bottom-color:var(--accent2)}
+    .ai-content{padding:24px;min-height:300px}
+    .ai-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:280px;gap:16px;color:var(--muted)}
+    .ai-placeholder .big-icon{font-size:3rem}
+    .ai-output{line-height:1.8;font-size:.9rem;white-space:pre-wrap;max-height:600px;overflow-y:auto}
+    .ai-output h2,h3{color:var(--accent2);margin:12px 0 6px}
+    .ai-output strong{color:var(--text)}
+    .generating{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.85rem}
+    .dot-pulse{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+    .generate-bar{padding:16px 24px;background:var(--bg3);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .investor-persona{display:flex;align-items:center;gap:10px}
+    .investor-persona .avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;background:var(--bg4);border:1px solid var(--border)}
+
+    /* ── DETAIL MODAL ── */
+    .detail-modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;width:800px;max-width:95vw;max-height:90vh;overflow-y:auto}
+    .detail-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
+    .detail-chart-wrap{height:250px;margin-bottom:20px}
+    .detail-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+    .stat-box{background:var(--bg3);border-radius:10px;padding:14px}
+    .stat-box .label{font-size:.75rem;color:var(--muted);margin-bottom:4px}
+    .stat-box .value{font-size:1.1rem;font-weight:700}
+
+    /* ── STATUS BAR ── */
+    #status-bar{background:var(--bg3);border-bottom:1px solid var(--border);padding:6px 24px;font-size:.78rem;color:var(--muted);display:flex;align-items:center;gap:8px}
+    .status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+    .status-dot.loading{background:var(--yellow)}
+    .status-dot.error{background:var(--red);animation:none}
+
+    /* ── LOADING SKELETON ── */
+    .skeleton{background:linear-gradient(90deg,var(--bg3) 25%,var(--bg4) 50%,var(--bg3) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    .skel-card{height:180px}
+
+    /* ── MISC ── */
+    .close-btn{background:none;border:none;color:var(--muted);font-size:1.4rem;cursor:pointer;padding:4px}
+    .close-btn:hover{color:var(--text)}
+    .tag{display:inline-block;font-size:.7rem;padding:2px 8px;border-radius:10px;border:1px solid var(--border);color:var(--muted)}
+    .error-msg{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:12px 16px;color:var(--red);font-size:.85rem;margin:12px 0}
+    .refresh-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:.8rem;display:flex;align-items:center;gap:6px}
+    .refresh-btn:hover{background:var(--bg3);color:var(--text)}
+
+    @media(max-width:600px){
+      main{padding:12px}
+      .etf-grid{grid-template-columns:1fr 1fr}
+      .detail-stats{grid-template-columns:1fr 1fr}
+    }
+  </style>
+</head>
+<body>
+
+<!-- API KEY MODAL — only Claude key needed; ETF data is free/no key -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <h2>⚙️ Configuration</h2>
+    <div class="input-group">
+      <label>Claude API Key <span style="color:var(--muted);font-weight:400">(for AI analysis only)</span></label>
+      <input type="text" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false" />
+      <div class="hint">ETF data loads automatically — no data API key needed. Claude key is only required for the AI recommendations feature.</div>
+    </div>
+    <div id="save-msg" style="font-size:.82rem;min-height:1.2em;margin-bottom:8px"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeSettings()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ETF DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal">
+  <div class="detail-modal">
+    <div class="detail-header">
+      <div>
+        <div style="font-size:1.5rem;font-weight:700" id="detail-sym">—</div>
+        <div style="color:var(--muted);font-size:.9rem" id="detail-name">—</div>
+      </div>
+      <button class="close-btn" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="detail-chart-wrap"><canvas id="detailChart"></canvas></div>
+    <div class="detail-stats" id="detail-stats"></div>
+    <div id="detail-desc" style="font-size:.85rem;color:var(--muted);line-height:1.7"></div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">📈 <span>ETF Advisor</span> &mdash; Wall Street Intelligence</div>
+  <div class="header-right">
+    <div class="date-badge" id="today-date">—</div>
+    <button class="refresh-btn" onclick="loadAllData()">⟳ Refresh</button>
+    <button class="btn btn-ghost btn-sm" onclick="openSettings()">⚙ API Key</button>
+  </div>
+</header>
+
+<!-- CORS WARNING (shown only when nothing loads) -->
+<div id="cors-warning" style="display:none;background:#7c2d12;border-bottom:1px solid #dc2626;padding:12px 24px;font-size:.85rem;color:#fecaca;line-height:1.7">
+  ⚠️ <strong>No data loaded — CORS extension not covering this page.</strong><br>
+  Fix: open <code style="background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px">chrome://extensions</code>
+  → find your CORS extension → click <strong>Details</strong> → enable <strong>"Allow access to file URLs"</strong> → reload this page.
+</div>
+
+<!-- STATUS BAR -->
+<div id="status-bar">
+  <div class="status-dot loading" id="status-dot"></div>
+  <span id="status-text">Initializing…</span>
+</div>
+
+<main>
+
+  <!-- MARKET OVERVIEW -->
+  <section>
+    <h2 class="section-title">🌐 Market Overview</h2>
+    <div class="market-grid" id="market-overview"></div>
+  </section>
+
+  <!-- ETF CARDS -->
+  <section>
+    <h2 class="section-title">📊 ETF Tracker <span id="etf-count" style="font-size:.75rem;font-weight:400;color:var(--muted)"></span></h2>
+    <div class="etf-grid" id="etf-grid"></div>
+  </section>
+
+  <!-- AI ANALYSIS -->
+  <section>
+    <h2 class="section-title">🤖 AI Investment Analysis</h2>
+    <div class="ai-panel">
+      <div class="investor-tabs" id="investor-tabs"></div>
+      <div class="ai-content" id="ai-content">
+        <div class="ai-placeholder">
+          <div class="big-icon">🏦</div>
+          <div style="font-weight:600">Generate AI Analysis</div>
+          <div style="font-size:.85rem;text-align:center;max-width:320px">Load ETF data then click Generate to get personalized recommendations from famous investors</div>
+        </div>
+      </div>
+      <div class="generate-bar">
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.5">
+          <strong style="color:var(--text)">Free:</strong> Rule-based analysis (no API needed) &nbsp;|&nbsp;
+          <strong style="color:var(--text)">AI:</strong> Uses Claude API key (~$0.001/analysis with Haiku)
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" id="rule-btn" onclick="generateRuleAnalysis()">⚡ Free Analysis</button>
+          <button class="btn btn-primary" id="generate-btn" onclick="generateAnalysis()">✨ AI Analysis</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONFIGURATION
+// ═══════════════════════════════════════════════════════════
+// ETFs selected for 5-year growth potential — thematic & forward-looking
+const ETFS = [
+  // Market Reference
+  {symbol:'SPY',  name:'S&P 500',                sector:'Market Ref',    desc:'Benchmark for the overall US market. Core reference for all comparisons.'},
+  {symbol:'QQQ',  name:'Nasdaq 100',             sector:'Market Ref',    desc:'Top 100 non-financial Nasdaq companies. Heavily weighted toward mega-cap tech.'},
+  // AI & Semiconductors — backbone of the next decade
+  {symbol:'SOXX', name:'Semiconductors',         sector:'AI Hardware',   desc:'iShares Semiconductor ETF. Tracks companies designing and manufacturing chips — the infrastructure of AI.'},
+  {symbol:'SMH',  name:'VanEck Semiconductors',  sector:'AI Hardware',   desc:'Concentrated bet on the largest semiconductor companies: Nvidia, TSMC, ASML, Broadcom.'},
+  {symbol:'BOTZ', name:'Robotics & AI',          sector:'AI/Robotics',   desc:'Global robotics and AI companies. Exposure to industrial automation, autonomous systems, and AI software.'},
+  // Innovation Funds
+  {symbol:'ARKK', name:'ARK Innovation',         sector:'Innovation',    desc:'Actively managed disruptive innovation fund. AI, genomics, fintech, space — high risk/reward.'},
+  {symbol:'ARKW', name:'ARK Next Gen Internet',  sector:'Innovation',    desc:'Next-generation internet: cloud, AI SaaS, streaming, digital wallets, blockchain platforms.'},
+  {symbol:'ARKG', name:'ARK Genomic Revolution', sector:'Biotech',       desc:'Gene editing, CRISPR, immunotherapy, bioinformatics. Potential to transform medicine by 2030.'},
+  // Clean Energy & Infrastructure
+  {symbol:'ICLN', name:'Clean Energy',           sector:'Clean Energy',  desc:'Global clean energy companies: solar, wind, EV infrastructure. Long-term tailwind from energy transition.'},
+  {symbol:'PAVE', name:'US Infrastructure',      sector:'Infrastructure',desc:'Companies benefiting from US infrastructure spending: materials, industrials, construction.'},
+  // Cybersecurity
+  {symbol:'CIBR', name:'Cybersecurity',          sector:'Cybersecurity', desc:'First Trust Cybersecurity ETF. Every company needs cybersecurity — growing $300B+ market.'},
+  // Biotech
+  {symbol:'IBB',  name:'Biotech',                sector:'Biotech',       desc:'iShares Biotech ETF. Broader biotech exposure including large-cap leaders and mid-cap innovators.'},
+  // Vanguard Tech
+  {symbol:'VGT',  name:'Vanguard IT',            sector:'Technology',    desc:'Vanguard Information Technology. Low-cost broad IT exposure: software, hardware, semiconductors.'},
+  // Emerging Growth Market
+  {symbol:'INDA', name:'India',                  sector:'Emerging',      desc:'iShares India ETF. India is the fastest-growing major economy — demographic and manufacturing tailwind.'},
+];
+
+const INVESTORS = [
+  {id:'market',   name:'Market Overview',   icon:'🌍', color:'#60a5fa'},
+  {id:'analyst',  name:'Wall St. Analyst',  icon:'📊', color:'#34d399'},
+  {id:'buffett',  name:'Warren Buffett',    icon:'🏦', color:'#f59e0b'},
+  {id:'wood',     name:'Cathie Wood',       icon:'🚀', color:'#a78bfa'},
+  {id:'dalio',    name:'Ray Dalio',         icon:'⚖️', color:'#fb923c'},
+  {id:'lynch',    name:'Peter Lynch',       icon:'📈', color:'#22d3ee'},
+  {id:'soros',    name:'George Soros',      icon:'🌐', color:'#f472b6'},
+];
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let etfData = {};
+let aiResponses = {};
+let activeTab = 'market';
+let detailChartInstance = null;
+let sparkCharts = {};
+let isLoading = false;
+
+// ═══════════════════════════════════════════════════════════
+// SETTINGS — Claude API key only (ETF data needs no key)
+// ═══════════════════════════════════════════════════════════
+let _claudeKey = '';
+function getApiKey(){ return _claudeKey; }
+function tryLS(fn){ try{ return fn(); } catch(e){ return null; } }
+function loadSavedKeys(){
+  _claudeKey = tryLS(()=>localStorage.getItem('claude_api_key')) || '';
+}
+function openSettings(){
+  document.getElementById('apiKeyInput').value = _claudeKey;
+  document.getElementById('save-msg').textContent = '';
+  document.getElementById('settingsModal').classList.add('open');
+}
+function closeSettings(){ document.getElementById('settingsModal').classList.remove('open'); }
+function saveSettings(){
+  const msg    = document.getElementById('save-msg');
+  const claude = (document.getElementById('apiKeyInput').value || '').trim();
+  _claudeKey   = claude;
+  tryLS(()=>{ if(claude) localStorage.setItem('claude_api_key', claude); });
+  msg.style.color = 'var(--green)';
+  msg.textContent = '✓ Saved!';
+  setTimeout(closeSettings, 700);
+}
+
+// ═══════════════════════════════════════════════════════════
+// STATUS
+// ═══════════════════════════════════════════════════════════
+function setStatus(msg, state='loading'){
+  document.getElementById('status-text').textContent = msg;
+  document.getElementById('status-dot').className = 'status-dot ' + state;
+}
+
+// ═══════════════════════════════════════════════════════════
+// FETCH ETF DATA
+// Strategy: try sources in order, first one that returns data wins.
+//
+// IMPORTANT: This file must be opened with a CORS browser extension
+// that is enabled for file:// URLs. In Chrome:
+//   chrome://extensions → your CORS extension → Details →
+//   enable "Allow access to file URLs"
+// ═══════════════════════════════════════════════════════════
+
+function abort(ms){ return AbortSignal.timeout ? AbortSignal.timeout(ms) : undefined; }
+
+function dateRange(){
+  const d2 = new Date();
+  const d1 = new Date(); d1.setDate(d1.getDate() - 45);
+  const fmt = d => d.toISOString().slice(0,10).replace(/-/g,'');
+  return { d1: fmt(d1), d2: fmt(d2) };
+}
+
+// ── PARSERS ────────────────────────────────────────────────
+function parseSparkResult(res){
+  // Yahoo spark API result object for one symbol
+  const meta = res.meta || {};
+  const ts   = res.timestamp || [];
+  const closes = (res.indicators?.quote?.[0]?.close || []);
+  const pairs  = ts.map((t,i)=>({t, c:closes[i]})).filter(p=>p.c!=null);
+  if(pairs.length < 2) throw new Error('No spark data');
+  const cl   = pairs.map(p=>p.c);
+  const lb   = pairs.map(p=>{ const d=new Date(p.t*1000); return `${d.getMonth()+1}/${d.getDate()}`; });
+  const last = cl[cl.length-1], prev=cl[cl.length-2], first=cl[0];
+  const price = meta.regularMarketPrice || last;
+  const prevC = meta.previousClose || meta.chartPreviousClose || prev;
+  return {
+    closes:cl, labels:lb, price,
+    prevClose:prevC,
+    dayChange:  (price-prevC)/prevC*100,
+    monthChange:(last-first)/first*100,
+    volume: meta.regularMarketVolume||0,
+  };
+}
+
+function parseStooqCSV(csv, symbol){
+  const lines = csv.trim().split('\n').slice(1);
+  const rows = lines
+    .map(l=>{ const p=l.split(','); return {date:p[0],close:parseFloat(p[4]),volume:parseInt(p[5]||0)}; })
+    .filter(r=>r.date&&!isNaN(r.close)&&r.close>0)
+    .sort((a,b)=>a.date.localeCompare(b.date));
+  if(rows.length<2) throw new Error('No Stooq data');
+  const last=rows[rows.length-1], prev=rows[rows.length-2], first=rows[0];
+  return {
+    closes:rows.map(r=>r.close),
+    labels:rows.map(r=>{ const [,m,d]=r.date.split('-'); return `${+m}/${+d}`; }),
+    price:last.close, prevClose:prev.close,
+    dayChange:(last.close-prev.close)/prev.close*100,
+    monthChange:(last.close-first.close)/first.close*100,
+    volume:last.volume,
+  };
+}
+
+// ── BATCH FETCH — all ETFs in ONE request ──────────────────
+async function fetchAllBatch(symbols){
+  const syms = symbols.join(',');
+  // Yahoo spark endpoint: returns all symbols in one call, no crumb needed
+  const url = `https://query1.finance.yahoo.com/v7/finance/spark?symbols=${syms}&range=1mo&interval=1d&indicators=close&includeTimestamps=true`;
+  const proxies = [
+    u => u,  // direct (CORS Unblock handles it)
+    u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+    u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+    u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  ];
+
+  for(const proxy of proxies){
+    try{
+      const r = await fetch(proxy(url), {signal:abort(15000)});
+      if(!r.ok) continue;
+      const data = await r.json();
+      const results = data?.spark?.result;
+      if(!results?.length) continue;
+
+      const out = {};
+      for(const item of results){
+        try{
+          const sym = item.symbol;
+          const res = item.response?.[0];
+          if(!res) continue;
+          out[sym] = { symbol:sym, ...parseSparkResult(res) };
+        }catch(_){}
+      }
+      if(Object.keys(out).length > 0) return out;
+    }catch(_){}
+  }
+  return {};
+}
+
+// ── INDIVIDUAL FALLBACK — for symbols that batch missed ────
+async function fetchOneETF(symbol){
+  const {d1,d2} = dateRange(45);
+  const stooqUrl = `https://stooq.com/q/d/l/?s=${symbol.toLowerCase()}.us&d1=${d1}&d2=${d2}&i=d`;
+  const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=1mo&interval=1d`;
+  const proxies  = [
+    u => u,
+    u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+    u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  ];
+  for(const proxy of proxies){
+    // try Stooq
+    try{
+      const r=await fetch(proxy(stooqUrl),{signal:abort(10000)});
+      if(r.ok){ const t=await r.text(); if(t.includes(',')&&t.length>30) return {symbol,...parseStooqCSV(t,symbol)}; }
+    }catch(_){}
+    // try Yahoo chart
+    try{
+      const r=await fetch(proxy(yahooUrl),{signal:abort(10000)});
+      if(r.ok){
+        const d=await r.json();
+        const res=d?.chart?.result?.[0]; if(!res) continue;
+        return {symbol,...parseSparkResult(res)};
+      }
+    }catch(_){}
+  }
+  throw new Error('failed');
+}
+
+function dateRange(days=45){
+  const d2=new Date(), d1=new Date(); d1.setDate(d1.getDate()-days);
+  const fmt=d=>d.toISOString().slice(0,10).replace(/-/g,'');
+  return {d1:fmt(d1),d2:fmt(d2)};
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// SPARKLINE CHART
+// ═══════════════════════════════════════════════════════════
+function createSparkline(canvasId, labels, data, positive){
+  const ctx = document.getElementById(canvasId)?.getContext('2d');
+  if(!ctx) return;
+  if(sparkCharts[canvasId]) sparkCharts[canvasId].destroy();
+
+  const color = positive ? '#10b981' : '#ef4444';
+  const bg = positive
+    ? 'rgba(16,185,129,0.1)'
+    : 'rgba(239,68,68,0.1)';
+
+  sparkCharts[canvasId] = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        data,
+        borderColor: color,
+        borderWidth: 1.5,
+        backgroundColor: bg,
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      animation:false,
+      plugins:{legend:{display:false},tooltip:{enabled:false}},
+      scales:{x:{display:false},y:{display:false}},
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER MARKET OVERVIEW
+// ═══════════════════════════════════════════════════════════
+function renderMarketOverview(){
+  const overview = ['SPY','QQQ','SOXX','BOTZ','ICLN','CIBR'];
+  const el = document.getElementById('market-overview');
+  el.innerHTML = overview.map(sym => {
+    const d = etfData[sym];
+    if(!d) return '';
+    const up = d.dayChange >= 0;
+    const mUp = d.monthChange >= 0;
+    return `
+      <div class="market-card ${up?'up':'down'}">
+        <div class="sym">${sym}</div>
+        <div class="price">$${d.price.toFixed(2)}</div>
+        <div class="change ${up?'up':'down'}">${up?'▲':'▼'} ${Math.abs(d.dayChange).toFixed(2)}% today</div>
+        <div class="month" style="color:${mUp?'var(--green)':'var(--red)'}">
+          ${mUp?'↑':'↓'} ${Math.abs(d.monthChange).toFixed(1)}% this month
+        </div>
+        <div class="spark-wrap"><canvas id="spark-overview-${sym}"></canvas></div>
+      </div>`;
+  }).join('');
+
+  // draw sparklines
+  overview.forEach(sym => {
+    const d = etfData[sym];
+    if(d) createSparkline(`spark-overview-${sym}`, d.labels, d.closes, d.monthChange >= 0);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER ETF GRID
+// ═══════════════════════════════════════════════════════════
+function renderETFGrid(){
+  const grid = document.getElementById('etf-grid');
+  grid.innerHTML = ETFS.map(etf => {
+    const d = etfData[etf.symbol];
+    if(!d) return `<div class="etf-card skeleton skel-card"></div>`;
+
+    const up   = d.dayChange >= 0;
+    const mUp  = d.monthChange >= 0;
+    const vol  = d.volume ? (d.volume > 1e6 ? (d.volume/1e6).toFixed(1)+'M' : (d.volume/1e3).toFixed(0)+'K') : '—';
+
+    return `
+      <div class="etf-card" onclick="openDetail('${etf.symbol}')">
+        <div class="card-header">
+          <div>
+            <div class="sym">${etf.symbol}</div>
+            <div class="name">${etf.name}</div>
+          </div>
+          <div class="sector-badge">${etf.sector}</div>
+        </div>
+        <div class="price-row">
+          <div class="price">$${d.price.toFixed(2)}</div>
+          <div class="chg ${up?'up':'down'}">${up?'▲':'▼'}${Math.abs(d.dayChange).toFixed(2)}%</div>
+        </div>
+        <div class="metrics">
+          <div class="metric">1M <span style="color:${mUp?'var(--green)':'var(--red)'}">${mUp?'+':''}${d.monthChange.toFixed(1)}%</span></div>
+          <div class="metric">Vol <span>${vol}</span></div>
+        </div>
+        <div class="chart-wrap"><canvas id="spark-${etf.symbol}"></canvas></div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('etf-count').textContent = `(${Object.keys(etfData).length}/${ETFS.length} loaded)`;
+
+  // draw sparklines
+  ETFS.forEach(etf => {
+    const d = etfData[etf.symbol];
+    if(d) createSparkline(`spark-${etf.symbol}`, d.labels, d.closes, d.monthChange >= 0);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// ETF DETAIL MODAL
+// ═══════════════════════════════════════════════════════════
+function openDetail(symbol){
+  const d  = etfData[symbol];
+  const e  = ETFS.find(x => x.symbol === symbol);
+  if(!d || !e) return;
+
+  document.getElementById('detail-sym').textContent  = symbol;
+  document.getElementById('detail-name').textContent = e.name;
+  document.getElementById('detail-desc').textContent = e.desc;
+
+  const up    = d.dayChange >= 0;
+  const mUp   = d.monthChange >= 0;
+  const vol   = d.volume ? (d.volume > 1e6 ? (d.volume/1e6).toFixed(2)+'M' : (d.volume/1e3).toFixed(0)+'K') : '—';
+  const high  = Math.max(...d.closes).toFixed(2);
+  const low   = Math.min(...d.closes).toFixed(2);
+
+  document.getElementById('detail-stats').innerHTML = `
+    <div class="stat-box"><div class="label">Current Price</div><div class="value">$${d.price.toFixed(2)}</div></div>
+    <div class="stat-box"><div class="label">Day Change</div><div class="value" style="color:${up?'var(--green)':'var(--red)'}">${up?'+':''}${d.dayChange.toFixed(2)}%</div></div>
+    <div class="stat-box"><div class="label">Month Change</div><div class="value" style="color:${mUp?'var(--green)':'var(--red)'}">${mUp?'+':''}${d.monthChange.toFixed(2)}%</div></div>
+    <div class="stat-box"><div class="label">30-Day High</div><div class="value">$${high}</div></div>
+    <div class="stat-box"><div class="label">30-Day Low</div><div class="value">$${low}</div></div>
+    <div class="stat-box"><div class="label">Volume</div><div class="value">${vol}</div></div>
+  `;
+
+  document.getElementById('detailModal').classList.add('open');
+
+  setTimeout(() => {
+    if(detailChartInstance) detailChartInstance.destroy();
+    const ctx = document.getElementById('detailChart').getContext('2d');
+    const color = mUp ? '#10b981' : '#ef4444';
+    detailChartInstance = new Chart(ctx, {
+      type:'line',
+      data:{
+        labels: d.labels,
+        datasets:[{
+          label: symbol+' Close',
+          data: d.closes,
+          borderColor: color,
+          borderWidth: 2,
+          backgroundColor: mUp ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 2,
+          pointBackgroundColor: color,
+        }]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          tooltip:{
+            callbacks:{
+              label: ctx => `$${ctx.raw.toFixed(2)}`
+            }
+          }
+        },
+        scales:{
+          x:{ticks:{color:'#64748b',maxTicksLimit:8},grid:{color:'rgba(255,255,255,0.03)'}},
+          y:{ticks:{color:'#64748b',callback:v=>'$'+v.toFixed(0)},grid:{color:'rgba(255,255,255,0.05)'}},
+        }
+      }
+    });
+  }, 50);
+}
+function closeDetail(){
+  document.getElementById('detailModal').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════════════
+// INVESTOR TABS
+// ═══════════════════════════════════════════════════════════
+function renderTabs(){
+  document.getElementById('investor-tabs').innerHTML = INVESTORS.map(inv => `
+    <button class="itab ${inv.id===activeTab?'active':''}" onclick="switchTab('${inv.id}')">
+      <span>${inv.icon}</span>${inv.name}
+    </button>
+  `).join('');
+}
+
+function switchTab(id){
+  activeTab = id;
+  renderTabs();
+  const content = aiResponses[id];
+  const el = document.getElementById('ai-content');
+  if(content){
+    el.innerHTML = `<div class="ai-output">${formatMarkdown(content)}</div>`;
+  } else {
+    el.innerHTML = `
+      <div class="ai-placeholder">
+        <div class="big-icon">${INVESTORS.find(i=>i.id===id)?.icon||'🤖'}</div>
+        <div style="font-weight:600">${INVESTORS.find(i=>i.id===id)?.name}</div>
+        <div style="font-size:.85rem;color:var(--muted)">Click "Generate Analysis" to get recommendations</div>
+      </div>`;
+  }
+}
+
+function formatMarkdown(text){
+  return text
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^# (.+)$/gm,'<h2>$1</h2>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/`(.+?)`/g,'<code style="background:var(--bg3);padding:1px 5px;border-radius:4px">$1</code>')
+    .replace(/^- (.+)$/gm,'<div style="margin:2px 0;padding-left:12px">• $1</div>')
+    .replace(/\n\n/g,'<br><br>');
+}
+
+// ═══════════════════════════════════════════════════════════
+// FREE RULE-BASED ANALYSIS (no API key needed)
+// ═══════════════════════════════════════════════════════════
+function generateRuleAnalysis(){
+  if(Object.keys(etfData).length === 0){ alert('Load ETF data first.'); return; }
+
+  const all    = Object.values(etfData);
+  const sorted = [...all].sort((a,b) => b.monthChange - a.monthChange);
+  const top3   = sorted.slice(0,3);
+  const bot3   = sorted.slice(-3).reverse();
+  const spy    = etfData['SPY'];
+  const qqq    = etfData['QQQ'];
+  const avgM   = all.reduce((s,d)=>s+d.monthChange,0)/all.length;
+  const nUp    = all.filter(d=>d.monthChange>0).length;
+  const nDown  = all.length - nUp;
+  const today  = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+  // Sector-level averages
+  const sectorMap = {};
+  all.forEach(d=>{
+    const s = ETFS.find(e=>e.symbol===d.symbol)?.sector||'Other';
+    if(!sectorMap[s]) sectorMap[s]={sum:0,n:0};
+    sectorMap[s].sum+=d.monthChange; sectorMap[s].n++;
+  });
+  const sectors = Object.entries(sectorMap).map(([s,v])=>({s,avg:v.sum/v.n})).sort((a,b)=>b.avg-a.avg);
+  const bestSec = sectors[0], worstSec = sectors[sectors.length-1];
+
+  function pct(v){ return (v>=0?'+':'')+v.toFixed(1)+'%'; }
+  function card(d,color){
+    const etf=ETFS.find(e=>e.symbol===d.symbol);
+    return `<div style="margin:6px 0;padding:10px 14px;background:rgba(${color},.08);border-radius:8px;border-left:3px solid rgba(${color},1);line-height:1.6">
+      <strong>${d.symbol}</strong> <span style="color:var(--muted);font-size:.8rem">${etf?.name}</span><br>
+      <span style="font-size:.85rem">Price: <strong>$${d.price.toFixed(2)}</strong> &nbsp;·&nbsp; Today: <strong style="color:${d.dayChange>=0?'var(--green)':'var(--red)'}">${pct(d.dayChange)}</strong> &nbsp;·&nbsp; Month: <strong style="color:${d.monthChange>=0?'var(--green)':'var(--red)'}">${pct(d.monthChange)}</strong></span>
+    </div>`;
+  }
+
+  function rating(d){
+    if(d.dayChange>1&&d.monthChange>5)  return {r:'STRONG BUY',c:'var(--green)'};
+    if(d.dayChange>0&&d.monthChange>0)  return {r:'BUY',c:'var(--green)'};
+    if(d.monthChange>-3)                return {r:'HOLD',c:'var(--yellow)'};
+    return {r:'AVOID',c:'var(--red)'};
+  }
+  const rows = sorted.map(d=>{
+    const {r,c}=rating(d);
+    return `<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+      <td style="padding:7px 8px"><strong>${d.symbol}</strong></td>
+      <td style="padding:7px 8px;color:var(--muted);font-size:.78rem">${ETFS.find(e=>e.symbol===d.symbol)?.sector||''}</td>
+      <td style="padding:7px 8px;text-align:right">$${d.price.toFixed(2)}</td>
+      <td style="padding:7px 8px;text-align:right;color:${d.dayChange>=0?'var(--green)':'var(--red)'}">${pct(d.dayChange)}</td>
+      <td style="padding:7px 8px;text-align:right;color:${d.monthChange>=0?'var(--green)':'var(--red)'}">${pct(d.monthChange)}</td>
+      <td style="padding:7px 8px;text-align:center"><span style="color:${c};font-weight:700;font-size:.78rem">${r}</span></td>
+    </tr>`;
+  }).join('');
+
+  // ── MARKET OVERVIEW ──────────────────────────────────────
+  const mkSentiment = avgM > 3 ? 'strongly bullish' : avgM > 0 ? 'mildly bullish' : avgM > -5 ? 'cautious' : 'bearish';
+  const marketHtml = `
+<h2>🌍 Market Overview — ${today}</h2>
+<p style="color:var(--muted);margin-bottom:20px">Momentum-based analysis · ${all.length} ETFs tracked</p>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px">
+  <div style="background:var(--bg3);border-radius:10px;padding:14px;border:1px solid var(--border)">
+    <div style="font-size:.75rem;color:var(--muted)">Market Mood</div>
+    <div style="font-size:1.2rem;font-weight:700;margin-top:4px">${avgM>=0?'📈':'📉'} ${mkSentiment.charAt(0).toUpperCase()+mkSentiment.slice(1)}</div>
+  </div>
+  <div style="background:var(--bg3);border-radius:10px;padding:14px;border:1px solid var(--border)">
+    <div style="font-size:.75rem;color:var(--muted)">S&P 500 (SPY) Month</div>
+    <div style="font-size:1.2rem;font-weight:700;color:${spy?.monthChange>=0?'var(--green)':'var(--red)'};margin-top:4px">${spy?pct(spy.monthChange):'—'}</div>
+  </div>
+  <div style="background:var(--bg3);border-radius:10px;padding:14px;border:1px solid var(--border)">
+    <div style="font-size:.75rem;color:var(--muted)">ETFs Up / Down</div>
+    <div style="font-size:1.2rem;font-weight:700;margin-top:4px"><span style="color:var(--green)">${nUp}↑</span> / <span style="color:var(--red)">${nDown}↓</span></div>
+  </div>
+  <div style="background:var(--bg3);border-radius:10px;padding:14px;border:1px solid var(--border)">
+    <div style="font-size:.75rem;color:var(--muted)">Best Sector</div>
+    <div style="font-size:1rem;font-weight:700;color:var(--green);margin-top:4px">${bestSec.s} (${pct(bestSec.avg)})</div>
+  </div>
+</div>
+
+<h3>🏆 Top Performers</h3>
+${top3.map(d=>card(d,'16,185,129')).join('')}
+<h3 style="margin-top:16px">⚠️ Weakest Performers</h3>
+${bot3.map(d=>card(d,'239,68,68')).join('')}
+
+<h3 style="margin-top:16px">📊 Full Rankings</h3>
+<table style="width:100%;border-collapse:collapse;font-size:.83rem;margin-top:8px">
+  <thead><tr style="color:var(--muted);border-bottom:1px solid var(--border)">
+    <th style="text-align:left;padding:6px 8px">Symbol</th><th style="text-align:left;padding:6px 8px">Sector</th>
+    <th style="text-align:right;padding:6px 8px">Price</th><th style="text-align:right;padding:6px 8px">Day</th>
+    <th style="text-align:right;padding:6px 8px">Month</th><th style="text-align:center;padding:6px 8px">Signal</th>
+  </tr></thead><tbody>${rows}</tbody>
+</table>
+<p style="margin-top:14px;font-size:.73rem;color:var(--muted)">⚠ Signals based on price momentum only. Not financial advice.</p>`;
+
+  // ── INVESTOR REVIEWS ─────────────────────────────────────
+  const t1=top3[0], t2=top3[1]||top3[0], w1=bot3[0], w2=bot3[1]||bot3[0];
+
+  function investorHtml(icon, name, color, content){
+    return `<div style="border-left:3px solid ${color};padding-left:16px;margin-bottom:8px">
+      <h2>${icon} ${name} — ${today}</h2></div>
+      <div style="line-height:1.9;font-size:.9rem">${content}</div>
+      <p style="margin-top:16px;font-size:.73rem;color:var(--muted)">⚠ Simulated perspective based on price data. Not financial advice.</p>`;
+  }
+
+  const analystHtml = investorHtml('📊','Wall Street Analyst','#34d399',`
+<p>Current market conditions are <strong>${mkSentiment}</strong> with ${nUp} of ${all.length} tracked ETFs posting positive monthly returns. The average monthly return across our coverage universe is <strong>${pct(avgM)}</strong>.</p>
+<p><strong>Top momentum play:</strong> <strong>${t1.symbol}</strong> leads with a ${pct(t1.monthChange)} monthly gain, trading at $${t1.price.toFixed(2)}. The daily change of ${pct(t1.dayChange)} ${t1.dayChange>0?'confirms bullish continuation':'shows some near-term softening, but the trend remains intact'}. We rate this <span style="color:var(--green);font-weight:700">BUY</span> with momentum on its side.</p>
+<p><strong>${t2.symbol}</strong> is our second pick — up ${pct(t2.monthChange)} over the past month. ${t2.dayChange>0?'Today\'s positive session reinforces the uptrend.':'Despite a minor pullback today, the monthly trend remains constructive.'} Target: <span style="color:var(--green);font-weight:700">BUY</span>.</p>
+<p><strong>Avoid:</strong> <strong>${w1.symbol}</strong> is down ${pct(w1.monthChange)} this month with a ${pct(w1.dayChange)} session today — negative momentum on both timeframes. We rate this <span style="color:var(--red);font-weight:700">UNDERPERFORM</span> until a clear reversal signal emerges.</p>
+<p><strong>Sector Rotation:</strong> ${bestSec.s} is leading (avg ${pct(bestSec.avg)}) while ${worstSec.s} lags (avg ${pct(worstSec.avg)}). Rotate toward strength.</p>`);
+
+  const spyDesc = spy ? `The S&P 500 is ${spy.monthChange>=0?'up':'down'} ${Math.abs(spy.monthChange).toFixed(1)}% this month` : 'Market data limited';
+  const buffettHtml = investorHtml('🏦','Warren Buffett','#f59e0b',`
+<p>"${spyDesc}. In my 80 years of investing, I've learned that the direction of the market in any given month tells you very little about where it will be in ten years. What matters is buying wonderful businesses at fair prices."</p>
+<p>"I don't think much of ETFs that chase the latest trend. However, I have always respected a low-cost index fund for the ordinary investor. <strong>${t1.symbol}</strong> has had a good run — ${pct(t1.monthChange)} this month — but I'd ask: does it represent businesses with durable competitive advantages, or is it riding a wave of enthusiasm?"</p>
+<p>"The weakest performer, <strong>${w1.symbol}</strong>, is down ${pct(w1.monthChange)}. My partner Charlie would say: when the tide goes out, you discover who's been swimming naked. I'd want to understand the fundamental businesses behind that ETF before assuming this is a buying opportunity."</p>
+<p>"My advice to the average investor remains unchanged: buy a low-cost S&P 500 index fund — <strong>SPY</strong> — regularly, hold it for decades, and ignore the noise. Time in the market beats timing the market, always."</p>
+<p><em>"Price is what you pay. Value is what you get."</em></p>`);
+
+  const woodHtml = investorHtml('🚀','Cathie Wood','#a78bfa',`
+<p>"We are living through the most transformative period in human history. The convergence of AI, genomics, robotics, energy storage, and blockchain is creating an innovation supercycle that most investors are dramatically underestimating."</p>
+<p>"The market is ${mkSentiment} right now — ${pct(avgM)} average returns this month. But at ARK, we don't invest for one month. Our five-year price targets tell a completely different story. When innovation ETFs pull back, as <strong>${w1.symbol}</strong> has (${pct(w1.monthChange)} this month), we see it as a gift — we are buying more."</p>
+<p>"<strong>${t1.symbol}</strong> is up ${pct(t1.monthChange)} and leading the pack. This confirms what our research has been showing: the market is beginning to price in exponential growth curves. We expect this to continue as AI adoption accelerates."</p>
+<p>"The best sectors for the next five years are AI hardware, genomic sequencing, and next-generation internet. The companies in these ETFs will be 10x to 50x larger by 2030. Volatility is the price of admission for extraordinary long-term returns."</p>
+<p><em>"We focus on what the world could look like in five years, not five months."</em></p>`);
+
+  const dalioHtml = investorHtml('⚖️','Ray Dalio','#fb923c',`
+<p>"Let me be very clear about what I'm seeing in the data. The market is showing ${mkSentiment} conditions — ${pct(avgM)} average monthly return across our ETF universe. But no single data point tells the full story."</p>
+<p>"At Bridgewater, we look at the world through the lens of four macro environments: growth rising/falling and inflation rising/falling. An all-weather portfolio should perform in all of them. Right now, with ${nUp} ETFs up and ${nDown} down this month, the market is pricing in a specific scenario. That's dangerous."</p>
+<p>"I am concerned about concentration risk. <strong>${t1.symbol}</strong> leads with ${pct(t1.monthChange)} — but chasing top performers is exactly what retail investors do wrong. Meanwhile, <strong>${w1.symbol}</strong> at ${pct(w1.monthChange)} might represent exactly the kind of asset you should be adding to for balance."</p>
+<p>"My recommendation: diversify across gold, bonds, equities, and commodities. Don't be seduced by momentum. The debt supercycle is reaching critical levels. Protect your portfolio with uncorrelated assets."</p>
+<p><em>"Diversification is the holy grail of investing."</em></p>`);
+
+  const lynchHtml = investorHtml('📈','Peter Lynch','#22d3ee',`
+<p>"You know, I managed Magellan Fund for 13 years and beat the market because I followed a simple rule: invest in what you understand. Let me walk you through what I see in today's numbers."</p>
+<p>"The market is ${mkSentiment} — ${pct(avgM)} average return this month. ${nUp} ETFs are up, ${nDown} are down. This is actually a healthy environment for stock-pickers, which is what I always was at heart."</p>
+<p>"I like <strong>${t1.symbol}</strong> right now — up ${pct(t1.monthChange)} with a ${pct(t1.dayChange)} move today. The trend is your friend until it ends. But I'd also be looking at <strong>${w1.symbol}</strong>, which is down ${pct(w1.monthChange)}. Sometimes the best opportunities are in the sectors everyone else is abandoning."</p>
+<p>"The best sector this month is ${bestSec.s} (${pct(bestSec.avg)} avg). Ask yourself: is this a temporary trend or a structural shift? In my experience, the sectors that lead for 6+ months tend to keep leading."</p>
+<p>"Remember: behind every ETF is a collection of real businesses run by real people. Do your homework."</p>
+<p><em>"Go for a business that any idiot can run — because sooner or later, any idiot probably is going to run it."</em></p>`);
+
+  const sorosHtml = investorHtml('🌐','George Soros','#f472b6',`
+<p>"The market is not a reflection of reality — it shapes reality. This is the essence of reflexivity, my theory that has guided decades of macro investing."</p>
+<p>"Current conditions are ${mkSentiment}. ${nUp} of ${all.length} ETFs are positive this month. The crowd is ${avgM>0?'optimistic':'pessimistic'}. When the crowd is this ${avgM>0?'optimistic':'pessimistic'}, I ask: what does the crowd not yet see? What is the reflexive feedback loop that will eventually invert this trend?"</p>
+<p>"<strong>${t1.symbol}</strong> is up ${pct(t1.monthChange)} — a momentum leader. In my experience, momentum leaders attract capital until they become overcrowded. Watch for the reversal signal carefully. The bigger the move up, the more violent the correction when it comes."</p>
+<p>"<strong>${w1.symbol}</strong> is down ${pct(w1.monthChange)}. This could be the beginning of a trend breakdown — or it could be the washout that precedes a powerful recovery. I look for signs of capitulation and reflexive reversal."</p>
+<p>"The macro backdrop matters most. Interest rates, dollar strength, and geopolitical flows will determine which of these ETFs win over the next 12 months — not last month's price action."</p>
+<p><em>"It's not whether you're right or wrong, but how much money you make when you're right and how much you lose when you're wrong."</em></p>`);
+
+  aiResponses = {
+    market:  marketHtml,
+    analyst: analystHtml,
+    buffett: buffettHtml,
+    wood:    woodHtml,
+    dalio:   dalioHtml,
+    lynch:   lynchHtml,
+    soros:   sorosHtml,
+  };
+  activeTab = 'market';
+  renderTabs();
+  switchTab('market');
+}
+
+// GENERATE AI ANALYSIS
+// ═══════════════════════════════════════════════════════════
+async function generateAnalysis(){
+  const apiKey = getApiKey();
+  if(!apiKey){
+    openSettings();
+    return;
+  }
+  if(Object.keys(etfData).length === 0){
+    alert('Please wait for ETF data to load first.');
+    return;
+  }
+
+  const btn = document.getElementById('generate-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating…';
+
+  // build ETF summary
+  const summary = ETFS.map(etf => {
+    const d = etfData[etf.symbol];
+    if(!d) return null;
+    return `${etf.symbol} (${etf.name}): Price $${d.price.toFixed(2)} | Day ${d.dayChange>0?'+':''}${d.dayChange.toFixed(2)}% | 1-Month ${d.monthChange>0?'+':''}${d.monthChange.toFixed(2)}% | Sector: ${etf.sector}`;
+  }).filter(Boolean).join('\n');
+
+  const todayStr = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+  const prompt = `You are a financial advisory AI. Today is ${todayStr}.
+
+Here is the last 30-day ETF performance data:
+${summary}
+
+Please provide a COMPREHENSIVE investment analysis structured EXACTLY with these 7 sections (use the exact headers below):
+
+---
+# 🌍 Market Overview
+[2-3 paragraph analysis of the overall market conditions based on this data. Identify key trends, sector rotation, risk levels.]
+
+---
+# 📊 Wall Street Analyst — Technical Analysis
+[Analyze momentum, trends, and technicals. Give top 3 ETF picks with reasoning, 1-2 to avoid. Rate each: BUY / HOLD / SELL. Include brief price target rationale.]
+
+---
+# 🏦 Warren Buffett — Value Investing
+[As if Buffett himself is speaking. Focus on value, economic moats, margin of safety. Be skeptical of speculative ETFs. Reference his investment principles. First-person voice.]
+
+---
+# 🚀 Cathie Wood — ARK Innovation Style
+[Enthusiastic about disruption and innovation. Focus on long-duration growth assets, 5-year outlook, disruptive potential. First-person voice.]
+
+---
+# ⚖️ Ray Dalio — Macro / All-Weather
+[Balanced portfolio thinking, debt supercycle, currency debasement concerns. Think about all-weather allocation. First-person voice.]
+
+---
+# 📈 Peter Lynch — GARP Style
+[Growth at Reasonable Price. Sector rotation, practical common-sense investing. Reference "10-bagger" thinking. First-person voice.]
+
+---
+# 🌐 George Soros — Global Macro
+[Reflexivity theory, identify market imbalances, bold contrarian positioning. Mention macro regime. First-person voice.]
+
+Be specific, opinionated, and detailed. Reference actual ETF symbols.`;
+
+  // assign to all tabs, stream into "market" tab first
+  aiResponses = {};
+  activeTab = 'market';
+  renderTabs();
+
+  const el = document.getElementById('ai-content');
+  el.innerHTML = '<div class="generating"><div class="dot-pulse"></div> Streaming analysis from Claude claude-haiku-4-5-20251001…</div>';
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 5000,
+        stream: true,
+        messages: [{role:'user', content: prompt}]
+      })
+    });
+
+    if(!resp.ok){
+      const err = await resp.json().catch(()=>({}));
+      throw new Error(err.error?.message || 'API error ' + resp.status);
+    }
+
+    let fullText = '';
+    el.innerHTML = '<div class="ai-output" id="stream-out"></div>';
+    const out = document.getElementById('stream-out');
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+
+    while(true){
+      const {done, value} = await reader.read();
+      if(done) break;
+      const chunk = decoder.decode(value, {stream:true});
+      for(const line of chunk.split('\n')){
+        if(!line.startsWith('data:')) continue;
+        const raw = line.slice(5).trim();
+        if(raw==='[DONE]') continue;
+        try{
+          const ev = JSON.parse(raw);
+          if(ev.type==='content_block_delta' && ev.delta?.type==='text_delta'){
+            fullText += ev.delta.text;
+            out.innerHTML = formatMarkdown(fullText);
+            out.scrollTop = out.scrollHeight;
+          }
+        } catch(_){}
+      }
+    }
+
+    // parse sections into tabs
+    const sections = {
+      market:  extract(fullText, 'Market Overview'),
+      analyst: extract(fullText, 'Wall Street Analyst'),
+      buffett: extract(fullText, 'Warren Buffett'),
+      wood:    extract(fullText, 'Cathie Wood'),
+      dalio:   extract(fullText, 'Ray Dalio'),
+      lynch:   extract(fullText, 'Peter Lynch'),
+      soros:   extract(fullText, 'George Soros'),
+    };
+
+    // if sections parsed OK, store them
+    let anySection = false;
+    for(const [k,v] of Object.entries(sections)){
+      if(v){ aiResponses[k] = v; anySection = true; }
+    }
+    if(!anySection) aiResponses['market'] = fullText; // fallback: dump all in market
+
+    switchTab('market');
+
+  } catch(err){
+    el.innerHTML = `<div class="error-msg">❌ Error: ${err.message}<br><br>Make sure your Claude API key is correct and try again.</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ Generate Analysis';
+  }
+}
+
+function extract(text, heading){
+  // extract from ## heading to next ## or end
+  const re = new RegExp(`(?:#{1,3})[^\\n]*${escapeRegex(heading)}[^\\n]*\\n([\\s\\S]*?)(?=\\n---\\n#|$)`,'i');
+  const m = text.match(re);
+  return m ? m[1].trim() : null;
+}
+function escapeRegex(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+
+// ═══════════════════════════════════════════════════════════
+// LOAD ALL ETF DATA
+// Strategy:
+//   Step 1 — ONE batch request for current quotes (all symbols)
+//   Step 2 — Sequential chart requests with delay to avoid rate limiting
+// ═══════════════════════════════════════════════════════════
+async function loadAllData(){
+  if(isLoading) return;
+  isLoading = true;
+  etfData = {};
+  aiResponses = {};
+
+  setStatus('Fetching all ETFs in one request…', 'loading');
+  document.getElementById('etf-grid').innerHTML =
+    ETFS.map(() => '<div class="etf-card skeleton skel-card"></div>').join('');
+  document.getElementById('market-overview').innerHTML = '';
+
+  const symbols = ETFS.map(e => e.symbol);
+  const total   = symbols.length;
+
+  // ── STEP 1: single batch request for all ETFs ──
+  const batchResult = await fetchAllBatch(symbols);
+  for(const [sym, d] of Object.entries(batchResult)) etfData[sym] = d;
+
+  setStatus(`Batch: ${Object.keys(etfData).length}/${total} loaded — fetching missing…`, 'loading');
+  renderETFGrid(); renderMarketOverview();
+
+  // ── STEP 2: individual fallback for any that batch missed ──
+  const missing = ETFS.filter(e => !etfData[e.symbol]);
+  for(const etf of missing){
+    try{ etfData[etf.symbol] = await fetchOneETF(etf.symbol); }
+    catch(_){ console.warn('Gave up on', etf.symbol); }
+    renderETFGrid(); renderMarketOverview();
+    await new Promise(r => setTimeout(r, 500));
+  }
+
+  const nLoaded = Object.keys(etfData).length;
+  const failed  = total - nLoaded;
+  document.getElementById('cors-warning').style.display = nLoaded === 0 ? 'block' : 'none';
+  setStatus(
+    failed === 0
+      ? `All ${total} ETFs loaded · ${new Date().toLocaleTimeString()}`
+      : nLoaded === 0
+        ? '❌ No data — see the red banner above for fix instructions'
+        : `${nLoaded}/${total} loaded · ${failed} failed (click ⟳ to retry)`,
+    nLoaded === 0 ? 'error' : failed === 0 ? 'ok' : 'error'
+  );
+  renderTabs();
+  isLoading = false;
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('today-date').textContent =
+    new Date().toLocaleDateString('en-US',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+
+  // load persisted Claude key
+  loadSavedKeys();
+
+  renderTabs();
+  loadAllData();
+});
+
+// close modals on overlay click
+document.getElementById('settingsModal').addEventListener('click', e => {
+  if(e.target === e.currentTarget) closeSettings();
+});
+document.getElementById('detailModal').addEventListener('click', e => {
+  if(e.target === e.currentTarget) closeDetail();
+});
+</script>
+</body>
+</html>
