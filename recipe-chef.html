@@ -325,6 +325,9 @@
       .ingr-amount{color:#d97706}
       .step-num{background:#d97706}
     }
+    @media print{
+      body.print-no-img .recipe-img-wrap{display:none!important}
+    }
   </style>
 </head>
 <body>
@@ -417,6 +420,7 @@
     <div class="action-row">
       <button class="action-btn btn-new" onclick="newRecipeSameCategory()">🔄 &nbsp;מתכון אחר</button>
       <button class="action-btn btn-print" onclick="window.print()">🖨 &nbsp;הדפסה</button>
+      <button class="action-btn btn-print" onclick="printWithoutImages()">🖨 &nbsp;הדפסה ללא תמונה</button>
       <button class="action-btn btn-print" onclick="goHome()">🏠 &nbsp;בית</button>
     </div>
 
@@ -643,6 +647,12 @@ async function generateRecipe() {
 
 function newRecipeSameCategory() {
   showScreen('screen-ingr');
+}
+
+function printWithoutImages() {
+  document.body.classList.add('print-no-img');
+  window.print();
+  document.body.classList.remove('print-no-img');
 }
 
 function setSuggestion(text) {
