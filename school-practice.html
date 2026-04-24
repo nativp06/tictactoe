@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>לומד חכם - תרגול לבחינות</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --primary: #4F46E5;
+  --primary-dark: #3730A3;
+  --primary-light: #EEF2FF;
+  --secondary: #7C3AED;
+  --success: #059669;
+  --success-light: #ECFDF5;
+  --error: #DC2626;
+  --error-light: #FEF2F2;
+  --warning: #D97706;
+  --warning-light: #FFFBEB;
+  --bg: #F5F3FF;
+  --card: #FFFFFF;
+  --text: #1E1B4B;
+  --text-secondary: #6B7280;
+  --text-light: #9CA3AF;
+  --border: #E5E7EB;
+  --radius: 16px;
+  --shadow-lg: 0 10px 25px rgba(0,0,0,0.12);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Heebo',Arial,sans-serif;
+  background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+  min-height:100vh;
+  color:var(--text);
+  direction:rtl;
+}
+.app-shell{min-height:100vh;display:flex;flex-direction:column;}
+
+/* HEADER */
+header{
+  background:rgba(255,255,255,0.15);
+  backdrop-filter:blur(12px);
+  padding:14px 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,0.2);
+  position:sticky;top:0;z-index:100;
+}
+.logo{font-size:1.4rem;font-weight:900;color:white;display:flex;align-items:center;gap:8px;}
+.header-right{display:flex;align-items:center;gap:10px;}
+.student-badge{
+  background:rgba(255,255,255,0.25);color:white;
+  padding:5px 14px;border-radius:20px;font-size:0.88rem;font-weight:700;
+}
+.btn-glass{
+  background:rgba(255,255,255,0.2);color:white;
+  border:1px solid rgba(255,255,255,0.35);
+  padding:7px 14px;border-radius:8px;cursor:pointer;
+  font-family:'Heebo',Arial,sans-serif;font-size:0.83rem;font-weight:600;
+  transition:all .2s;
+}
+.btn-glass:hover{background:rgba(255,255,255,0.35);}
+
+/* MAIN */
+.main{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:32px 16px;}
+
+/* SCREENS */
+.screen{display:none;width:100%;max-width:650px;animation:fadeUp .3s ease;}
+.screen.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* CARD */
+.card{background:white;border-radius:var(--radius);padding:32px;box-shadow:var(--shadow-lg);margin-bottom:16px;}
+.card-title{font-size:1.6rem;font-weight:900;color:var(--text);margin-bottom:6px;}
+.card-sub{color:var(--text-secondary);margin-bottom:26px;font-size:.95rem;line-height:1.5;}
+
+/* BUTTONS */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:13px 24px;border-radius:12px;
+  font-family:'Heebo',Arial,sans-serif;font-size:1rem;font-weight:700;
+  cursor:pointer;transition:all .2s;border:none;
+}
+.btn-primary{
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  color:white;width:100%;padding:15px;font-size:1.05rem;
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(79,70,229,.4);}
+.btn-primary:disabled{opacity:.55;transform:none;cursor:not-allowed;box-shadow:none;}
+.btn-success{background:linear-gradient(135deg,#059669,#10B981);color:white;width:100%;padding:15px;}
+.btn-success:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(5,150,105,.4);}
+.btn-outline{background:white;color:var(--primary);border:2px solid var(--primary);width:100%;padding:13px;}
+.btn-outline:hover{background:var(--primary-light);}
+.btn-sm{padding:8px 16px;font-size:.85rem;border-radius:8px;width:auto;}
+
+/* FORM */
+.form-group{margin-bottom:20px;}
+label{display:block;font-weight:700;margin-bottom:8px;color:var(--text);font-size:.92rem;}
+input[type=text],input[type=password],input[type=number],select,textarea{
+  width:100%;padding:12px 16px;border:2px solid var(--border);border-radius:12px;
+  font-family:'Heebo',Arial,sans-serif;font-size:1rem;color:var(--text);
+  transition:border-color .2s;background:white;direction:rtl;
+}
+input:focus,select:focus,textarea:focus{
+  outline:none;border-color:var(--primary);
+  box-shadow:0 0 0 3px rgba(79,70,229,.1);
+}
+input[type=text]::placeholder,input[type=password]::placeholder,textarea::placeholder{
+  color:var(--text-light);
+}
+
+/* GRADE GRID */
+.grade-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:8px;}
+.grade-btn{
+  padding:11px 4px;border:2px solid var(--border);border-radius:10px;
+  background:white;cursor:pointer;font-family:'Heebo',Arial,sans-serif;
+  font-size:.95rem;font-weight:700;text-align:center;transition:all .2s;color:var(--text);
+}
+.grade-btn:hover{border-color:var(--primary);background:var(--primary-light);}
+.grade-btn.selected{
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  color:white;border-color:transparent;
+}
+
+/* SUBJECT CARDS */
+.subject-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px;}
+.subject-card{
+  padding:24px 16px;border:2px solid var(--border);border-radius:16px;
+  background:white;cursor:pointer;text-align:center;transition:all .2s;
+}
+.subject-card:hover{border-color:var(--primary);transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,.1);}
+.subject-card.selected{border-color:var(--primary);background:var(--primary-light);}
+.subject-card .s-icon{font-size:2.8rem;margin-bottom:10px;}
+.subject-card .s-title{font-size:1.1rem;font-weight:800;color:var(--text);}
+
+/* SESSION HEADER */
+.session-top{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:12px;flex-wrap:wrap;gap:8px;
+}
+.badge{padding:4px 12px;border-radius:20px;font-size:.78rem;font-weight:700;}
+.badge-purple{background:var(--primary-light);color:var(--primary);}
+.badge-green{background:var(--success-light);color:var(--success);}
+.badge-yellow{background:var(--warning-light);color:var(--warning);}
+.progress-bar{width:100%;height:9px;background:var(--border);border-radius:5px;margin-bottom:24px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));transition:width .5s ease;border-radius:5px;}
+.question-text{
+  font-size:1.2rem;font-weight:600;color:var(--text);margin-bottom:24px;
+  line-height:1.7;min-height:72px;white-space:pre-wrap;
+}
+.options-grid{display:grid;gap:11px;margin-bottom:20px;}
+.option-btn{
+  padding:13px 18px;border:2px solid var(--border);border-radius:12px;
+  background:white;cursor:pointer;font-family:'Heebo',Arial,sans-serif;
+  font-size:.97rem;font-weight:500;text-align:right;direction:rtl;
+  transition:all .2s;color:var(--text);
+}
+.option-btn:hover:not(:disabled){border-color:var(--primary);background:var(--primary-light);}
+.option-btn.selected{border-color:var(--primary);background:var(--primary-light);}
+.option-btn.correct{border-color:var(--success)!important;background:var(--success-light)!important;color:var(--success)!important;font-weight:700;}
+.option-btn.wrong{border-color:var(--error)!important;background:var(--error-light)!important;color:var(--error)!important;}
+.option-btn:disabled{cursor:default;}
+.open-answer-row{display:flex;gap:12px;margin-bottom:20px;}
+.open-answer-row input{flex:1;font-size:1.05rem;}
+.open-answer-row button{width:auto;padding:12px 22px;}
+
+/* EXPLANATION */
+.exp-box{
+  border-radius:12px;padding:18px;margin:14px 0;
+  border:2px solid;
+}
+.exp-box.wrong-box{background:var(--error-light);border-color:#FCA5A5;}
+.exp-box.correct-box{background:var(--success-light);border-color:#86EFAC;}
+.exp-box.info-box{background:var(--primary-light);border-color:#C7D2FE;}
+.exp-label{font-weight:800;font-size:.85rem;margin-bottom:6px;}
+.exp-label.red{color:var(--error);}
+.exp-label.green{color:var(--success);}
+.exp-label.blue{color:var(--primary);}
+.exp-text{color:var(--text);line-height:1.75;font-size:.96rem;white-space:pre-wrap;}
+
+/* SCORE CIRCLE */
+.score-circle{
+  width:148px;height:148px;border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  margin:0 auto 24px;
+  box-shadow:0 10px 30px rgba(79,70,229,.4);
+}
+.score-num{font-size:2.6rem;font-weight:900;color:white;line-height:1;}
+.score-lbl{font-size:.82rem;color:rgba(255,255,255,.8);font-weight:500;margin-top:2px;}
+.results-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
+.res-item{background:var(--bg);border-radius:12px;padding:16px;text-align:center;}
+.res-val{font-size:1.6rem;font-weight:900;color:var(--primary);}
+.res-label{font-size:.78rem;color:var(--text-secondary);margin-top:3px;}
+.result-msg{text-align:center;font-size:1.05rem;font-weight:700;color:var(--text);margin-bottom:20px;}
+
+/* STUDENTS */
+.student-list{display:flex;flex-direction:column;gap:12px;margin-bottom:24px;}
+.student-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;border:2px solid var(--border);border-radius:14px;
+  background:white;cursor:pointer;transition:all .2s;
+}
+.student-item:hover{border-color:var(--primary);transform:translateX(-3px);box-shadow:0 4px 16px rgba(0,0,0,.08);}
+.s-info{display:flex;align-items:center;gap:12px;}
+.s-avatar{
+  width:46px;height:46px;border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;color:white;font-weight:900;
+  flex-shrink:0;
+}
+.s-name{font-weight:800;font-size:1rem;color:var(--text);}
+.s-grade{font-size:.83rem;color:var(--text-secondary);}
+.s-count{font-size:.78rem;color:var(--text-light);background:var(--bg);padding:4px 10px;border-radius:20px;white-space:nowrap;}
+
+/* HISTORY */
+.history-table{width:100%;border-collapse:collapse;font-size:.88rem;}
+.history-table th{
+  text-align:right;padding:10px 12px;background:var(--bg);
+  border-bottom:2px solid var(--border);font-weight:800;color:var(--text-secondary);font-size:.78rem;
+}
+.history-table td{padding:11px 12px;border-bottom:1px solid var(--border);color:var(--text);}
+.history-table tr:hover td{background:var(--bg);}
+.chart-box{position:relative;height:260px;margin-bottom:24px;}
+
+/* LOADING */
+.loading-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(255,255,255,.88);backdrop-filter:blur(5px);
+  z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:16px;
+}
+.loading-overlay.visible{display:flex;}
+.spinner{
+  width:50px;height:50px;border:4px solid var(--border);
+  border-top-color:var(--primary);border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{color:var(--text);font-weight:700;font-size:1rem;}
+
+/* MODAL */
+.modal-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.5);z-index:300;
+  align-items:center;justify-content:center;padding:16px;
+}
+.modal-overlay.visible{display:flex;}
+.modal{background:white;border-radius:var(--radius);padding:28px;width:100%;max-width:460px;box-shadow:var(--shadow-lg);}
+.modal-title{font-size:1.2rem;font-weight:800;margin-bottom:18px;}
+
+/* ALERT */
+.alert{padding:11px 16px;border-radius:10px;margin-bottom:14px;font-size:.9rem;font-weight:600;}
+.alert-error{background:var(--error-light);color:var(--error);}
+.alert-success{background:var(--success-light);color:var(--success);}
+.alert-info{background:var(--primary-light);color:var(--primary);}
+.alert-empty{min-height:0;}
+
+/* CONFETTI */
+.confetti-wrap{position:fixed;inset:0;pointer-events:none;z-index:999;}
+.cp{position:absolute;border-radius:2px;animation:fall linear forwards;}
+@keyframes fall{0%{transform:translateY(-20px) rotate(0);opacity:1}100%{transform:translateY(105vh) rotate(720deg);opacity:0}}
+
+/* DIVIDER */
+.divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:var(--text-secondary);font-size:.85rem;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* SECTION LABEL */
+.section-label{font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--text-secondary);margin-bottom:8px;}
+
+@media(max-width:480px){
+  .card{padding:20px 16px;}
+  .grade-grid{grid-template-columns:repeat(4,1fr);}
+  .results-grid{grid-template-columns:1fr 1fr;}
+  header{padding:12px 16px;}
+  .main{padding:20px 12px;}
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+<!-- HEADER -->
+<header>
+  <div class="logo">🎓 לומד חכם</div>
+  <div class="header-right" id="header-right" style="display:none">
+    <span class="student-badge" id="header-student-name"></span>
+    <button class="btn-glass" onclick="showHistoryScreen()">📊 היסטוריה</button>
+    <button class="btn-glass" onclick="openSettings()">⚙️</button>
+    <button class="btn-glass" onclick="changeStudent()">החלף תלמיד</button>
+  </div>
+</header>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- SCREEN: API KEY SETUP -->
+  <div class="screen active" id="screen-setup">
+    <div class="card">
+      <div class="card-title">ברוכים הבאים! 👋</div>
+      <div class="card-sub">לומד חכם עוזר לכם להתכונן למבחנים עם שאלות מותאמות אישית לתכנית הלימודים הישראלית.<br><br>להתחלה, הכנס את מפתח ה-API של Claude (Anthropic).</div>
+      <div id="setup-alert"></div>
+      <div class="form-group">
+        <label>מפתח API של Anthropic</label>
+        <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." />
+        <div style="margin-top:8px;font-size:.8rem;color:var(--text-secondary)">
+          ניתן לקבל מפתח ב-console.anthropic.com • המפתח נשמר רק בדפדפן שלך
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveApiKey()">התחל ➜</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: STUDENTS LIST -->
+  <div class="screen" id="screen-students">
+    <div class="card">
+      <div class="card-title">בחר תלמיד</div>
+      <div class="card-sub">בחר פרופיל קיים או הוסף תלמיד חדש</div>
+      <div id="student-list" class="student-list"></div>
+      <div class="divider">או</div>
+      <button class="btn btn-outline" onclick="showNewStudent()">+ הוסף תלמיד חדש</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: NEW STUDENT -->
+  <div class="screen" id="screen-new-student">
+    <div class="card">
+      <div class="card-title">תלמיד חדש</div>
+      <div class="card-sub">מלא את הפרטים כדי להתחיל לתרגל</div>
+      <div id="new-student-alert"></div>
+      <div class="form-group">
+        <label>שם התלמיד</label>
+        <input type="text" id="ns-name" placeholder="לדוגמה: יוסי כהן" />
+      </div>
+      <div class="form-group">
+        <label>כיתה</label>
+        <div class="grade-grid" id="ns-grade-grid"></div>
+      </div>
+      <button class="btn btn-primary" onclick="createStudent()" style="margin-top:8px">יצור פרופיל ➜</button>
+      <button class="btn btn-outline" onclick="showScreen('students')" style="margin-top:10px">חזור</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: SUBJECT SELECTION -->
+  <div class="screen" id="screen-subject">
+    <div class="card">
+      <div class="card-title">שלום, <span id="subj-student-name"></span>! 👋</div>
+      <div class="card-sub">בחר מה לתרגל היום</div>
+      <div id="subject-alert"></div>
+
+      <div class="form-group">
+        <label>כיתה (לתרגול זה)</label>
+        <div class="grade-grid" id="subj-grade-grid"></div>
+      </div>
+
+      <div class="form-group">
+        <label>מקצוע</label>
+        <div class="subject-cards">
+          <div class="subject-card" id="subj-math" onclick="pickSubject('math')">
+            <div class="s-icon">📐</div>
+            <div class="s-title">מתמטיקה</div>
+          </div>
+          <div class="subject-card" id="subj-english" onclick="pickSubject('english')">
+            <div class="s-icon">🔤</div>
+            <div class="s-title">אנגלית</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>נושא לתרגול</label>
+        <input type="text" id="sub-subject-input" placeholder="לדוגמה: שברים, פעולות חשבון, זמנים באנגלית..." />
+        <div style="margin-top:8px;font-size:.8rem;color:var(--text-secondary)">כתוב את הנושא הספציפי שאתה רוצה לתרגל</div>
+      </div>
+
+      <button class="btn btn-primary" onclick="startSession()">התחל תרגול ➜</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: SESSION (QUESTIONS) -->
+  <div class="screen" id="screen-session">
+    <div class="card">
+      <div class="session-top">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <span class="badge badge-purple" id="q-counter">שאלה 1 מתוך 10</span>
+          <span class="badge badge-yellow" id="q-difficulty">רמה ⭐</span>
+          <span class="badge badge-green" id="q-correct">✓ 0</span>
+        </div>
+        <span id="q-subject-badge" class="badge badge-purple"></span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      <div id="session-alert"></div>
+      <div class="question-text" id="question-text">טוען שאלה...</div>
+      <div id="answer-area"></div>
+    </div>
+  </div>
+
+  <!-- SCREEN: EXPLANATION -->
+  <div class="screen" id="screen-explanation">
+    <div class="card">
+      <div style="font-size:2rem;text-align:center;margin-bottom:12px;">🤔</div>
+      <div class="card-title" style="text-align:center;font-size:1.3rem;">לא נכון הפעם</div>
+      <div class="card-sub" style="text-align:center">בואו נבין מה קרה ואיך מגיעים לתשובה הנכונה</div>
+
+      <div class="section-label" style="margin-top:4px;">השאלה</div>
+      <div class="exp-box info-box" style="margin-top:0">
+        <div class="exp-text" id="exp-question"></div>
+      </div>
+
+      <div class="exp-box wrong-box">
+        <div class="exp-label red">❌ התשובה שלך</div>
+        <div class="exp-text" id="exp-student-answer"></div>
+      </div>
+
+      <div class="exp-box correct-box">
+        <div class="exp-label green">✅ התשובה הנכונה</div>
+        <div class="exp-text" id="exp-correct-answer"></div>
+      </div>
+
+      <div class="card" style="background:var(--bg);padding:20px;margin-top:0;">
+        <div class="exp-label blue" style="font-size:.88rem;margin-bottom:10px;">💡 הסבר</div>
+        <div class="exp-text" id="exp-explanation"></div>
+      </div>
+
+      <button class="btn btn-success" onclick="understoodContinue()">הבנתי! המשך ➜</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: RESULTS -->
+  <div class="screen" id="screen-results">
+    <div class="card">
+      <div style="text-align:center;margin-bottom:6px;font-size:.9rem;color:var(--text-secondary);">תרגול הסתיים!</div>
+      <div class="score-circle">
+        <div class="score-num" id="result-score">0%</div>
+        <div class="score-lbl">ציון</div>
+      </div>
+      <div class="result-msg" id="result-message"></div>
+      <div class="results-grid">
+        <div class="res-item"><div class="res-val" id="result-correct">0</div><div class="res-label">תשובות נכונות</div></div>
+        <div class="res-item"><div class="res-val" id="result-total">10</div><div class="res-label">סך שאלות</div></div>
+        <div class="res-item"><div class="res-val" id="result-level">1</div><div class="res-label">רמה מקסימלית</div></div>
+        <div class="res-item"><div class="res-val" id="result-time">-</div><div class="res-label">זמן</div></div>
+      </div>
+      <div style="text-align:center;font-size:.88rem;color:var(--text-secondary);margin-bottom:20px;">נושא: <strong id="result-subject"></strong></div>
+      <button class="btn btn-primary" onclick="practiceAgain()">תרגל שוב 🔄</button>
+      <button class="btn btn-outline" style="margin-top:10px" onclick="showHistoryScreen()">📊 ראה התקדמות</button>
+      <button class="btn btn-outline" style="margin-top:10px" onclick="changeStudent()">🏠 תפריט ראשי</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: HISTORY -->
+  <div class="screen" id="screen-history">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div class="card-title" style="margin-bottom:0;">📊 ההתקדמות שלי</div>
+        <button class="btn btn-sm btn-outline" onclick="goBackFromHistory()">חזור</button>
+      </div>
+      <div class="card-sub" id="history-student-name"></div>
+
+      <div class="chart-box">
+        <canvas id="progress-chart"></canvas>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>תאריך</th>
+              <th>מקצוע</th>
+              <th>נושא</th>
+              <th>ציון</th>
+              <th>נכון/סה"כ</th>
+              <th>רמה</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end main -->
+</div><!-- end app-shell -->
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">טוען שאלה...</div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <div class="modal-title">⚙️ הגדרות</div>
+    <div class="form-group">
+      <label>מפתח API של Anthropic</label>
+      <input type="password" id="settings-key" placeholder="sk-ant-..." />
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-primary btn-sm" onclick="saveSettings()" style="width:auto;flex:1">שמור</button>
+      <button class="btn btn-outline btn-sm" onclick="closeSettings()" style="flex:1">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== STATE ====================
+const STORAGE_KEY = 'lomedChakham_v2';
+const TOTAL_Q = 10;
+const GRADES = ['א','ב','ג','ד','ה','ו','ז','ח','ט','י','יא','יב'];
+
+let S = {
+  apiKey: '',
+  students: {},
+  currentStudent: null,
+  // session
+  grade: '',
+  subject: '',
+  subSubject: '',
+  qIndex: 0,
+  difficulty: 1,
+  consecutiveCorrect: 0,
+  correctCount: 0,
+  sessionStart: 0,
+  currentQ: null,
+  // ui helpers
+  selectedOption: null,
+  historyFrom: null,   // which screen to go back to
+};
+
+// ==================== STORAGE ====================
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    S.apiKey = d.apiKey || '';
+    S.students = d.students || {};
+  } catch(e) {}
+}
+
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ apiKey: S.apiKey, students: S.students }));
+}
+
+// ==================== SCREENS ====================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  updateHeader();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateHeader() {
+  const hr = document.getElementById('header-right');
+  const hn = document.getElementById('header-student-name');
+  if (S.currentStudent) {
+    hn.textContent = S.currentStudent;
+    hr.style.display = 'flex';
+  } else {
+    hr.style.display = 'none';
+  }
+}
+
+// ==================== INIT ====================
+function init() {
+  loadData();
+  if (!S.apiKey) {
+    showScreen('setup');
+  } else {
+    renderStudentList();
+    showScreen('students');
+  }
+}
+
+// ==================== SETUP ====================
+function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key.startsWith('sk-ant-')) {
+    setAlert('setup-alert', 'מפתח לא תקין. מפתח Anthropic מתחיל ב-sk-ant-', 'error');
+    return;
+  }
+  S.apiKey = key;
+  saveData();
+  renderStudentList();
+  showScreen('students');
+}
+
+// ==================== STUDENTS ====================
+function renderStudentList() {
+  const list = document.getElementById('student-list');
+  const names = Object.keys(S.students);
+  if (!names.length) {
+    list.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:20px 0">אין תלמידים עדיין. הוסף תלמיד חדש!</p>';
+    return;
+  }
+  list.innerHTML = names.map(n => {
+    const st = S.students[n];
+    const sess = st.sessions || [];
+    const last = sess.length ? sess[sess.length-1].score + '%' : '—';
+    return `<div class="student-item" onclick="selectStudent('${escHtml(n)}')">
+      <div class="s-info">
+        <div class="s-avatar">${n[0]}</div>
+        <div>
+          <div class="s-name">${escHtml(n)}</div>
+          <div class="s-grade">כיתה ${st.grade} &nbsp;•&nbsp; ציון אחרון: ${last}</div>
+        </div>
+      </div>
+      <span class="s-count">${sess.length} תרגולים</span>
+    </div>`;
+  }).join('');
+}
+
+function selectStudent(name) {
+  S.currentStudent = name;
+  renderSubjectScreen();
+  showScreen('subject');
+}
+
+function changeStudent() {
+  S.currentStudent = null;
+  renderStudentList();
+  showScreen('students');
+}
+
+// ==================== NEW STUDENT ====================
+let newGrade = '';
+
+function renderGradeGrid(containerId, selected) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = GRADES.map(g =>
+    `<button class="grade-btn ${g===selected?'selected':''}" onclick="pickGrade('${containerId}','${g}')">${g}</button>`
+  ).join('');
+}
+
+function pickGrade(containerId, grade) {
+  if (containerId === 'ns-grade-grid') newGrade = grade;
+  else if (containerId === 'subj-grade-grid') S.grade = grade;
+  renderGradeGrid(containerId, grade);
+}
+
+function createStudent() {
+  const name = document.getElementById('ns-name').value.trim();
+  if (!name) { setAlert('new-student-alert','אנא הכנס שם תלמיד','error'); return; }
+  if (!newGrade) { setAlert('new-student-alert','אנא בחר כיתה','error'); return; }
+  if (S.students[name]) { setAlert('new-student-alert','תלמיד בשם זה כבר קיים','error'); return; }
+  S.students[name] = { grade: newGrade, sessions: [] };
+  saveData();
+  S.currentStudent = name;
+  newGrade = '';
+  renderSubjectScreen();
+  showScreen('subject');
+}
+
+// ==================== SUBJECT SCREEN ====================
+function renderSubjectScreen() {
+  document.getElementById('subj-student-name').textContent = S.currentStudent;
+  const grade = S.students[S.currentStudent]?.grade || '';
+  S.grade = grade;
+  renderGradeGrid('subj-grade-grid', grade);
+  S.subject = '';
+  document.querySelectorAll('.subject-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('sub-subject-input').value = '';
+  document.getElementById('subject-alert').innerHTML = '';
+}
+
+function pickSubject(subj) {
+  S.subject = subj;
+  document.querySelectorAll('.subject-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('subj-' + subj).classList.add('selected');
+}
+
+function startSession() {
+  const ss = document.getElementById('sub-subject-input').value.trim();
+  if (!S.grade) { setAlert('subject-alert','אנא בחר כיתה','error'); return; }
+  if (!S.subject) { setAlert('subject-alert','אנא בחר מקצוע','error'); return; }
+  if (!ss) { setAlert('subject-alert','אנא הכנס נושא לתרגול','error'); return; }
+  S.subSubject = ss;
+  S.qIndex = 0;
+  S.difficulty = 1;
+  S.consecutiveCorrect = 0;
+  S.correctCount = 0;
+  S.sessionStart = Date.now();
+  S.selectedOption = null;
+  showScreen('session');
+  document.getElementById('q-subject-badge').textContent = S.subject === 'math' ? '📐 מתמטיקה' : '🔤 אנגלית';
+  loadNextQuestion();
+}
+
+// ==================== API ====================
+async function callClaude(userMsg, systemPrompt) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': S.apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1200,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userMsg }]
+    })
+  });
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(e.error?.message || `שגיאת API (${res.status})`);
+  }
+  const data = await res.json();
+  return data.content[0].text;
+}
+
+async function generateQuestion() {
+  const gradeLabel = `כיתה ${S.grade}`;
+  const subjectHe = S.subject === 'math' ? 'מתמטיקה' : 'אנגלית';
+  const diffLabels = ['','קל מאוד','קל','בינוני','מתקדם','מאתגר מאוד'];
+  const diffLabel = diffLabels[S.difficulty];
+
+  const systemPrompt = `אתה מורה ישראלי מנוסה ומקצועי שיוצר שאלות לתרגול לתלמידים.
+עליך ליצור שאלות בהתאם לתכנית הלימודים הרשמית של ישראל (משרד החינוך).
+ענה אך ורק ב-JSON תקין, ללא כל טקסט נוסף לפני או אחרי ה-JSON.
+וודא שהשאלות מדויקות ומותאמות לגיל ולרמת הכיתה.`;
+
+  const instrMath = `השאלה והסבר — הכל בעברית. הסבר צעד-אחר-צעד מפורט.`;
+  const instrEng = `השאלה עצמה באנגלית מתאימה לגיל, ההסבר בעברית בלבד.`;
+
+  const userMsg = `צור שאלת ${subjectHe} ל${gradeLabel} בנושא: "${S.subSubject}".
+רמת קושי: ${S.difficulty}/5 (${diffLabel}).
+${S.subject === 'math' ? instrMath : instrEng}
+
+בחר סוג שאלה מתאים. ענה אך ורק עם JSON באחד מהפורמטים:
+
+לשאלה פתוחה:
+{"question":"...","type":"open","correct_answer":"...","explanation":"הסבר מפורט בעברית"}
+
+לבחירה מרובה:
+{"question":"...","type":"multiple_choice","options":["א. ...","ב. ...","ג. ...","ד. ..."],"correct_answer":"א","explanation":"הסבר מפורט בעברית"}
+
+דגשים:
+- ל-multiple_choice: correct_answer חייב להיות רק האות (א/ב/ג/ד)
+- ל-open: correct_answer חייב להיות התשובה המדויקת
+- ההסבר חייב להסביר שלב-אחר-שלב איך מגיעים לתשובה`;
+
+  const text = await callClaude(userMsg, systemPrompt);
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('תגובה לא תקינה מה-AI');
+  return JSON.parse(match[0]);
+}
+
+// ==================== SESSION FLOW ====================
+async function loadNextQuestion() {
+  showLoading('מייצר שאלה...');
+  document.getElementById('session-alert').innerHTML = '';
+  try {
+    const q = await generateQuestion();
+    S.currentQ = q;
+    displayQuestion(q);
+  } catch(err) {
+    setAlert('session-alert', '⚠️ ' + err.message + ' — <a href="#" onclick="loadNextQuestion();return false">נסה שוב</a>', 'error');
+  }
+  hideLoading();
+}
+
+function displayQuestion(q) {
+  const pct = (S.qIndex / TOTAL_Q) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('q-counter').textContent = `שאלה ${S.qIndex + 1} מתוך ${TOTAL_Q}`;
+  document.getElementById('q-difficulty').textContent = 'רמה ' + '⭐'.repeat(S.difficulty);
+  document.getElementById('q-correct').textContent = `✓ ${S.correctCount}`;
+  document.getElementById('question-text').textContent = q.question;
+  S.selectedOption = null;
+
+  const area = document.getElementById('answer-area');
+  if (q.type === 'multiple_choice') {
+    area.innerHTML = `
+      <div class="options-grid" id="opts">
+        ${q.options.map((opt, i) => {
+          const letter = ['א','ב','ג','ד'][i];
+          return `<button class="option-btn" id="opt-${letter}" onclick="selectOption(this,'${letter}')" data-val="${letter}">${opt}</button>`;
+        }).join('')}
+      </div>
+      <button class="btn btn-primary" id="mc-submit" onclick="submitMC()" disabled>בדוק תשובה ➜</button>`;
+  } else {
+    area.innerHTML = `
+      <div class="open-answer-row">
+        <input type="text" id="open-ans" placeholder="כתוב את תשובתך כאן..."
+          onkeydown="if(event.key==='Enter')submitOpen()" autocomplete="off" />
+        <button class="btn btn-primary" onclick="submitOpen()">בדוק ➜</button>
+      </div>`;
+    setTimeout(() => document.getElementById('open-ans')?.focus(), 100);
+  }
+}
+
+function selectOption(btn, val) {
+  document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  S.selectedOption = val;
+  document.getElementById('mc-submit').disabled = false;
+}
+
+function submitMC() {
+  if (!S.selectedOption) return;
+  checkAnswer(S.selectedOption);
+}
+
+function submitOpen() {
+  const ans = document.getElementById('open-ans')?.value?.trim();
+  if (!ans) { setAlert('session-alert','אנא כתוב תשובה','error'); return; }
+  document.getElementById('session-alert').innerHTML = '';
+  checkAnswer(ans);
+}
+
+function normalizeAns(a) {
+  return String(a).trim().replace(/\s+/g,' ').toLowerCase().replace(/^[,.'"\-]+|[,.'"\-]+$/g,'');
+}
+
+function checkAnswer(studentAns) {
+  const q = S.currentQ;
+  const correct = normalizeAns(q.correct_answer);
+  const student = normalizeAns(studentAns);
+
+  let isCorrect = correct === student;
+  if (!isCorrect) {
+    // numeric tolerance
+    const sn = parseFloat(student), cn = parseFloat(correct);
+    if (!isNaN(sn) && !isNaN(cn)) isCorrect = Math.abs(sn - cn) < 0.0001;
+  }
+  // multiple choice: also accept full option text match
+  if (!isCorrect && q.type === 'multiple_choice') {
+    const letters = ['א','ב','ג','ד'];
+    const correctIdx = letters.indexOf(q.correct_answer);
+    if (correctIdx >= 0 && q.options[correctIdx]) {
+      isCorrect = normalizeAns(q.options[correctIdx]) === student;
+    }
+  }
+
+  S.qIndex++;
+
+  if (isCorrect) {
+    S.correctCount++;
+    S.consecutiveCorrect++;
+    if (S.consecutiveCorrect >= 2 && S.difficulty < 5) {
+      S.difficulty++;
+      S.consecutiveCorrect = 0;
+    }
+    if (q.type === 'multiple_choice') {
+      highlightMC(q.correct_answer, null);
+      disableMC();
+      setTimeout(advanceOrEnd, 900);
+    } else {
+      flashOpen(true);
+      setTimeout(advanceOrEnd, 700);
+    }
+  } else {
+    S.consecutiveCorrect = 0;
+    if (q.type === 'multiple_choice') {
+      highlightMC(q.correct_answer, S.selectedOption);
+      disableMC();
+      setTimeout(() => showExplanation(studentAns), 1200);
+    } else {
+      flashOpen(false);
+      setTimeout(() => showExplanation(studentAns), 700);
+    }
+  }
+}
+
+function highlightMC(correctLetter, wrongLetter) {
+  document.querySelectorAll('.option-btn').forEach(b => {
+    const v = b.dataset.val;
+    if (v === correctLetter) b.classList.add('correct');
+    else if (wrongLetter && v === wrongLetter) { b.classList.remove('selected'); b.classList.add('wrong'); }
+  });
+}
+
+function disableMC() {
+  document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+  const sub = document.getElementById('mc-submit');
+  if (sub) sub.disabled = true;
+}
+
+function flashOpen(ok) {
+  const inp = document.getElementById('open-ans');
+  if (!inp) return;
+  inp.style.borderColor = ok ? 'var(--success)' : 'var(--error)';
+  inp.style.background = ok ? 'var(--success-light)' : 'var(--error-light)';
+  inp.readOnly = true;
+}
+
+function advanceOrEnd() {
+  if (S.qIndex < TOTAL_Q) { showScreen('session'); loadNextQuestion(); }
+  else endSession();
+}
+
+// ==================== EXPLANATION ====================
+function showExplanation(studentAns) {
+  const q = S.currentQ;
+  document.getElementById('exp-question').textContent = q.question;
+  document.getElementById('exp-student-answer').textContent = studentAns;
+
+  // Resolve full correct answer text for MC
+  let correctDisplay = q.correct_answer;
+  if (q.type === 'multiple_choice') {
+    const letters = ['א','ב','ג','ד'];
+    const idx = letters.indexOf(q.correct_answer);
+    if (idx >= 0 && q.options[idx]) correctDisplay = q.options[idx];
+  }
+  document.getElementById('exp-correct-answer').textContent = correctDisplay;
+  document.getElementById('exp-explanation').textContent = q.explanation;
+  showScreen('explanation');
+}
+
+function understoodContinue() {
+  showScreen('session');
+  if (S.qIndex < TOTAL_Q) loadNextQuestion();
+  else endSession();
+}
+
+// ==================== RESULTS ====================
+function endSession() {
+  const duration = Math.round((Date.now() - S.sessionStart) / 1000);
+  const score = Math.round((S.correctCount / TOTAL_Q) * 100);
+
+  const session = {
+    id: Date.now(),
+    date: new Date().toLocaleDateString('he-IL'),
+    dateISO: new Date().toISOString(),
+    subject: S.subject,
+    subSubject: S.subSubject,
+    grade: S.grade,
+    score,
+    correct: S.correctCount,
+    total: TOTAL_Q,
+    maxDifficulty: S.difficulty,
+    duration
+  };
+
+  if (!S.students[S.currentStudent].sessions) S.students[S.currentStudent].sessions = [];
+  S.students[S.currentStudent].sessions.push(session);
+  saveData();
+
+  renderResults(session);
+}
+
+function renderResults(s) {
+  document.getElementById('result-score').textContent = s.score + '%';
+  document.getElementById('result-correct').textContent = s.correct;
+  document.getElementById('result-total').textContent = s.total;
+  document.getElementById('result-level').textContent = s.maxDifficulty + '/5';
+  document.getElementById('result-time').textContent = formatDur(s.duration);
+  document.getElementById('result-subject').textContent = s.subSubject;
+
+  let msg;
+  if (s.score >= 90) msg = '🌟 מעולה! תוצאה מצוינת!';
+  else if (s.score >= 70) msg = '👍 יפה מאוד! ממשיכים להתקדם!';
+  else if (s.score >= 50) msg = '💪 לא רע! עוד קצת תרגול ותהיה מעולה!';
+  else msg = '📚 כדאי לחזור על החומר ולנסות שוב!';
+  document.getElementById('result-message').textContent = msg;
+
+  if (s.score >= 80) spawnConfetti();
+  showScreen('results');
+}
+
+function formatDur(sec) {
+  if (sec < 60) return sec + ' שנ׳';
+  return `${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')} דק׳`;
+}
+
+function practiceAgain() {
+  S.subSubject = '';
+  renderSubjectScreen();
+  showScreen('subject');
+}
+
+// ==================== HISTORY ====================
+let chartInst = null;
+
+function showHistoryScreen() {
+  S.historyFrom = document.querySelector('.screen.active')?.id?.replace('screen-','') || 'subject';
+  const sessions = S.students[S.currentStudent]?.sessions || [];
+  document.getElementById('history-student-name').textContent =
+    `התקדמות של ${S.currentStudent} — ${sessions.length} תרגולים`;
+  renderHistoryTable(sessions);
+  renderChart(sessions);
+  showScreen('history');
+}
+
+function goBackFromHistory() {
+  showScreen(S.historyFrom || 'subject');
+}
+
+function renderHistoryTable(sessions) {
+  const tbody = document.getElementById('history-tbody');
+  if (!sessions.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:20px">אין תרגולים עדיין</td></tr>';
+    return;
+  }
+  tbody.innerHTML = [...sessions].reverse().map(s => `
+    <tr>
+      <td>${s.date}</td>
+      <td>${s.subject==='math'?'מתמטיקה':'אנגלית'}</td>
+      <td>${escHtml(s.subSubject)}</td>
+      <td style="font-weight:800;color:${s.score>=70?'var(--success)':'var(--error)'}">${s.score}%</td>
+      <td>${s.correct}/${s.total}</td>
+      <td>${s.maxDifficulty}/5</td>
+    </tr>`).join('');
+}
+
+function renderChart(sessions) {
+  const ctx = document.getElementById('progress-chart').getContext('2d');
+  if (chartInst) { chartInst.destroy(); chartInst = null; }
+  if (!sessions.length) return;
+
+  const math = sessions.filter(s => s.subject === 'math');
+  const eng  = sessions.filter(s => s.subject === 'english');
+  const datasets = [];
+
+  if (math.length) datasets.push({
+    label: 'מתמטיקה',
+    data: math.map((s,i) => ({ x: i+1, y: s.score, label: s.date })),
+    borderColor: '#4F46E5', backgroundColor: 'rgba(79,70,229,.1)',
+    tension: .4, fill: true, pointRadius: 5, pointHoverRadius: 7,
+  });
+  if (eng.length) datasets.push({
+    label: 'אנגלית',
+    data: eng.map((s,i) => ({ x: i+1, y: s.score, label: s.date })),
+    borderColor: '#059669', backgroundColor: 'rgba(5,150,105,.1)',
+    tension: .4, fill: true, pointRadius: 5, pointHoverRadius: 7,
+  });
+
+  chartInst = new Chart(ctx, {
+    type: 'line',
+    data: { datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { family: 'Heebo', size: 13 }, padding: 16 } },
+        tooltip: {
+          callbacks: {
+            title: items => 'תאריך: ' + (items[0].raw.label || ''),
+            label: item => item.dataset.label + ': ' + item.parsed.y + '%'
+          }
+        }
+      },
+      scales: {
+        y: { min: 0, max: 100, ticks: { callback: v => v+'%', font: { family: 'Heebo' } },
+             grid: { color: 'rgba(0,0,0,.06)' } },
+        x: { title: { display: true, text: 'מספר תרגול', font: { family: 'Heebo' } },
+             ticks: { font: { family: 'Heebo' } } }
+      }
+    }
+  });
+}
+
+// ==================== SETTINGS ====================
+function openSettings() {
+  document.getElementById('settings-key').value = S.apiKey;
+  document.getElementById('settings-modal').classList.add('visible');
+}
+
+function closeSettings() {
+  document.getElementById('settings-modal').classList.remove('visible');
+}
+
+function saveSettings() {
+  const key = document.getElementById('settings-key').value.trim();
+  if (key) { S.apiKey = key; saveData(); }
+  closeSettings();
+}
+
+// ==================== LOADING ====================
+function showLoading(txt) {
+  document.getElementById('loading-text').textContent = txt || 'טוען...';
+  document.getElementById('loading-overlay').classList.add('visible');
+}
+
+function hideLoading() {
+  document.getElementById('loading-overlay').classList.remove('visible');
+}
+
+// ==================== UTILS ====================
+function setAlert(id, html, type) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = `<div class="alert alert-${type}">${html}</div>`;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ==================== CONFETTI ====================
+function spawnConfetti() {
+  const wrap = document.createElement('div');
+  wrap.className = 'confetti-wrap';
+  document.body.appendChild(wrap);
+  const colors = ['#4F46E5','#7C3AED','#EC4899','#F59E0B','#10B981','#EF4444','#06B6D4'];
+  for (let i = 0; i < 70; i++) {
+    const p = document.createElement('div');
+    p.className = 'cp';
+    const size = 6 + Math.random() * 10;
+    p.style.cssText = `
+      left:${Math.random()*100}%;
+      background:${colors[i % colors.length]};
+      width:${size}px;height:${size}px;
+      animation-duration:${2 + Math.random()*2.5}s;
+      animation-delay:${Math.random()*1.2}s;
+    `;
+    wrap.appendChild(p);
+  }
+  setTimeout(() => wrap.remove(), 5000);
+}
+
+// ==================== NEW STUDENT SCREEN ====================
+function showNewStudent() {
+  newGrade = '';
+  document.getElementById('ns-name').value = '';
+  document.getElementById('new-student-alert').innerHTML = '';
+  renderGradeGrid('ns-grade-grid', '');
+  showScreen('new-student');
+}
+
+window.addEventListener('load', init);
+</script>
+</body>
+</html>
