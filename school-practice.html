@@ -731,20 +731,22 @@ function startSession() {
 
 // ==================== JSON EXTRACTION ====================
 function extractJSON(text) {
-  // הסר גושי markdown כמו ```json ... ```
   const stripped = text.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '');
-  // מצא את ה-JSON object הראשון
   const match = stripped.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('לא נמצא JSON בתגובה');
-  // נקה תווי בקרה שעלולים לשבש פרסינג
-  const clean = match[0].replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
-  try {
-    return JSON.parse(clean);
-  } catch(e) {
-    // ניסיון אחרון: חתוך בסוף ה-} האחרון
-    const lastBrace = clean.lastIndexOf('}');
-    return JSON.parse(clean.slice(0, lastBrace + 1));
-  }
+  let clean = match[0].replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+  // try as-is first
+  try { return JSON.parse(clean); } catch(_) {}
+  // fix trailing commas before } or ]
+  clean = clean.replace(/,\s*([}\]])/g, '$1');
+  try { return JSON.parse(clean); } catch(_) {}
+  // fix unquoted keys: {key: → {"key":
+  clean = clean.replace(/([{,]\s*)([A-Za-z_]\w*)(\s*:)/g, '$1"$2"$3');
+  try { return JSON.parse(clean); } catch(_) {}
+  // last resort: truncate at last }
+  const lastBrace = clean.lastIndexOf('}');
+  if (lastBrace < 0) throw new Error('JSON לא תקין בתגובה');
+  return JSON.parse(clean.slice(0, lastBrace + 1));
 }
 
 // ==================== API ====================
@@ -855,16 +857,22 @@ ${ansFormat}
 
 // ==================== SESSION FLOW ====================
 async function loadNextQuestion() {
-  showLoading('יוצר שאלה...');
   document.getElementById('session-alert').innerHTML = '';
-  try {
-    const q = await generateQuestion();
-    S.currentQ = q;
-    displayQuestion(q);
-  } catch(err) {
-    setAlert('session-alert', '⚠️ ' + err.message + ' — <a href="#" onclick="loadNextQuestion();return false">נסה שוב</a>', 'error');
+  let lastErr;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    showLoading(attempt === 1 ? 'יוצר שאלה...' : `מנסה שוב (${attempt}/3)...`);
+    try {
+      const q = await generateQuestion();
+      S.currentQ = q;
+      displayQuestion(q);
+      hideLoading();
+      return;
+    } catch(err) {
+      lastErr = err;
+    }
   }
   hideLoading();
+  setAlert('session-alert', '⚠️ ' + lastErr.message + ' — <a href="#" onclick="loadNextQuestion();return false">נסה שוב</a>', 'error');
 }
 
 function displayQuestion(q) {
