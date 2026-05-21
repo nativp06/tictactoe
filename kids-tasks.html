@@ -460,12 +460,18 @@
   <div class="modal">
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <div class="modal-title">⚙️ פאנל הורים</div>
-      <button class="btn btn-ghost btn-sm" onclick="closeParent()">✕ סגור</button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-ghost btn-sm" onclick="refreshParentScores()" id="refresh-btn" title="רענן נתונים מ-Firebase">↻ רענן</button>
+        <button class="btn btn-ghost btn-sm" onclick="closeParent()">✕ סגור</button>
+      </div>
     </div>
 
     <!-- Scores -->
     <div>
-      <div class="section-label">ניקוד שבוע זה</div>
+      <div class="section-label" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>ניקוד שבוע זה</span>
+        <span id="sync-status" style="font-size:.72rem;color:var(--muted);font-weight:400;"></span>
+      </div>
       <div class="mini-scores">
         <div class="mini-score-box">
           <div class="msb-name" style="color:var(--almog)">👦 אלמוג</div>
@@ -1010,6 +1016,32 @@ function openParent() {
   document.getElementById('pass-save-msg').textContent  = '';
   document.getElementById('new-pass').value = '';
   document.getElementById('parent-modal').classList.add('open');
+  refreshParentScores();
+}
+
+function refreshParentScores() {
+  const statusEl = document.getElementById('sync-status');
+  const btn = document.getElementById('refresh-btn');
+  if (!firebaseRef) { if (statusEl) statusEl.textContent = '(מצב לא מקוון)'; return; }
+  if (statusEl) statusEl.textContent = '⟳ טוען...';
+  if (btn) btn.disabled = true;
+  firebaseRef.once('value').then(snapshot => {
+    const remote = snapshot.val();
+    if (remote) {
+      if (remote.almog !== undefined) data.almog = remote.almog;
+      if (remote.libi  !== undefined) data.libi  = remote.libi;
+      if (remote.tasks !== undefined) data.tasks = remote.tasks;
+    }
+    document.getElementById('p-score-almog').textContent = calcWeekPoints('almog');
+    document.getElementById('p-score-libi').textContent  = calcWeekPoints('libi');
+    const now = new Date();
+    const hhmm = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    if (statusEl) statusEl.textContent = `עודכן ב-${hhmm}`;
+    if (btn) btn.disabled = false;
+  }).catch(() => {
+    if (statusEl) statusEl.textContent = '⚠️ שגיאת חיבור';
+    if (btn) btn.disabled = false;
+  });
 }
 
 function closeParent() {
