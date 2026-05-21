@@ -605,6 +605,7 @@ function initSync() {
       const remote = snapshot.val();
       if (remote) {
         data = remote;
+        if (data.tasks && !Array.isArray(data.tasks)) data.tasks = Object.values(data.tasks);
         const weekReset = applyDefaults();
         const passReset = applyURLResets();
         if (weekReset || passReset) firebaseRef.set(data);
@@ -1022,24 +1023,37 @@ function openParent() {
 function refreshParentScores() {
   const statusEl = document.getElementById('sync-status');
   const btn = document.getElementById('refresh-btn');
-  if (!firebaseRef) { if (statusEl) statusEl.textContent = '(מצב לא מקוון)'; return; }
-  if (statusEl) statusEl.textContent = '⟳ טוען...';
+  if (!firebaseRef) {
+    if (statusEl) statusEl.textContent = '⚠️ Firebase לא מאותחל — בדוק חיבור';
+    return;
+  }
+  if (statusEl) statusEl.textContent = '⟳ טוען מ-Firebase...';
   if (btn) btn.disabled = true;
   firebaseRef.once('value').then(snapshot => {
     const remote = snapshot.val();
-    if (remote) {
-      if (remote.almog !== undefined) data.almog = remote.almog;
-      if (remote.libi  !== undefined) data.libi  = remote.libi;
-      if (remote.tasks !== undefined) data.tasks = remote.tasks;
+    if (!remote) {
+      if (statusEl) statusEl.textContent = '⚠️ Firebase ריק — אלמוג לא שמר נתונים';
+      if (btn) btn.disabled = false;
+      return;
     }
-    document.getElementById('p-score-almog').textContent = calcWeekPoints('almog');
-    document.getElementById('p-score-libi').textContent  = calcWeekPoints('libi');
-    const now = new Date();
-    const hhmm = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-    if (statusEl) statusEl.textContent = `עודכן ב-${hhmm}`;
+    if (remote.almog !== undefined) data.almog = remote.almog;
+    if (remote.libi  !== undefined) data.libi  = remote.libi;
+    if (remote.tasks !== undefined) {
+      data.tasks = Array.isArray(remote.tasks) ? remote.tasks : Object.values(remote.tasks);
+    }
+    const aScore = calcWeekPoints('almog');
+    const lScore = calcWeekPoints('libi');
+    document.getElementById('p-score-almog').textContent = aScore;
+    document.getElementById('p-score-libi').textContent  = lScore;
+    const almogDays = Object.keys(remote.almog || {}).length;
+    const fbWeek   = remote.weekStart || '?';
+    const myWeek   = getSunday();
+    const weekOk   = fbWeek === myWeek ? '✓' : `⚠️ Firebase:${fbWeek} מכשיר:${myWeek}`;
+    if (statusEl) statusEl.textContent =
+      `Firebase: אלמוג ${aScore}נק׳ (${almogDays} ימים) | שבוע ${weekOk}`;
     if (btn) btn.disabled = false;
-  }).catch(() => {
-    if (statusEl) statusEl.textContent = '⚠️ שגיאת חיבור';
+  }).catch(e => {
+    if (statusEl) statusEl.textContent = '⚠️ שגיאה: ' + (e.message || e);
     if (btn) btn.disabled = false;
   });
 }
